@@ -1,0 +1,20 @@
+### 💾 Installation
+
+1. 📥 Clone the repository:
+
+   ```sh
+   git clone <repo-url>
+   cd simple-crud-python
+   ```
+
+2. 🔧 Create and activate a virtual environment:
+
+   ```sh
+   python3 -m venv .venv
+   source .venv/bin/activate
+   ```
+
+3. 📦 Install dependencies:
+   ```sh
+   pip install -r requirements.txt
+   ```

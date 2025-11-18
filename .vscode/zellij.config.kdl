@@ -1,0 +1,27 @@
+layout {
+    tab name="back" cwd="./backend"{
+        pane size=1 borderless=true name="test" {
+            plugin location="zellij:tab-bar"
+        }
+        pane split_direction="Vertical" {
+            children
+        }
+        pane size=2 borderless=true {
+            plugin location="zellij:status-bar"
+        }
+    }
+    // tab name="front" cwd="./frontend"{ }
+    tab name="db-main" cwd="./database-main"{
+        pane size=1 borderless=true {
+            plugin location="zellij:tab-bar"
+        }
+        pane split_direction="Vertical" {
+            children
+        }
+        pane size=2 borderless=true {
+            plugin location="zellij:status-bar"
+        }
+    }
+    // tab name="db-replication" cwd="./database-replication"{
+    // }
+}
