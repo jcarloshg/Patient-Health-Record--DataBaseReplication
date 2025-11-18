@@ -1,0 +1,18 @@
+services:
+  db-main:
+    container_name: db-main
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - 5432:5432
+    environment:
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=123456
+      - POSTGRES_DB=main-db_patient_health_record
+    volumes:
+      - main-db-patient-health-record-vol:/var/lib/postgresql/data
+
+volumes:
+  main-db-patient-health-record-vol:
+    driver: local

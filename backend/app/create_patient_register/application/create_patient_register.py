@@ -17,6 +17,7 @@ class CreatePatientRegisterUseCase:
 
     def execute(self, props: CreatePatientRegisterProps) -> CustomResponse:
         try:
+
             # 1. User enters patient demographic information (name, date of birth (DOB), identification number, contact details)
             # 2. User enters initial medical information (allergies, medical history, current medications)
             # 3. System validates the input data
@@ -26,6 +27,11 @@ class CreatePatientRegisterUseCase:
                 msg="Patient registed successfully",
                 data=patientRegister
             )
+
+            # 5. System replicates the record to master-slave replicas for high availability
+            # 6. System asynchronously replicates to DR replica in geographically separated region
+            # 7. System confirms successful creation and returns patient ID
+
         except ModelErrorException as e:
             primitives = e.primitives()
             return CustomResponse.error(msg="Data validation error", data=primitives)
