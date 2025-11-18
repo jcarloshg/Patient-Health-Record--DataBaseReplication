@@ -72,3 +72,6 @@ class PatientRegister:
                 developer_message=developer_message,
                 property_name=property_name
             ) from e
+
+    def to_primitives(self) -> dict:
+        return self._data.model_dump()

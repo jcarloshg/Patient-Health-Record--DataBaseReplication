@@ -1,3 +1,5 @@
+import uuid
+
 
 """
 Unit tests for CreatePatientRegisterUseCase
@@ -77,7 +79,7 @@ def test_create_patient_register_valid_data():
     # Arrange
     props = CreatePatientRegisterProps()
     props['body'] = {
-        "uuid": "dbd13f36-c8a6-4398-8056-9560dbe0a917",
+        "uuid": str(uuid.uuid4()),
         "first_name": "Jane",
         "last_name": "Smith",
         "date_of_birth": "1990-05-15",
@@ -87,9 +89,9 @@ def test_create_patient_register_valid_data():
         "address": "123 Main St, Springfield",
         "emergency_contact": "John Smith",
         # medical data
-        "allergies": ["penicillin"],
-        "medical_history": ["hypertension"],
-        "current_medications": ["lisinopril"]
+        "allergies": ["penicillin", "latex"],
+        "medical_history": ["hypertension", "asthma"],
+        "current_medications": ["lisinopril", "albuterol"]
     }
 
     # Act
@@ -99,5 +101,5 @@ def test_create_patient_register_valid_data():
     # Assert
     assert response.code == 200
     assert response.is_success is True
-    assert response.message == "Patient registed successfully"
+    assert response.message == "Patient register created successfully"
     assert response.data is not None

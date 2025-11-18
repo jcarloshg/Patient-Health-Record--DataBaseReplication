@@ -5,6 +5,8 @@ from app.create_patient_register.domain.models.patient_register import PatientRe
 # domain shared
 from app.shared.domain.models.model_error_exeption import ModelErrorException
 from app.shared.domain.models.custom_response import CustomResponse
+# infra
+from app.shared.infra.persistence.postgres_sql.create_patient_register_postgress import CreatePatientRegisterPostgress
 
 
 class CreatePatientRegisterProps(TypedDict):
@@ -22,10 +24,18 @@ class CreatePatientRegisterUseCase:
             # 2. User enters initial medical information (allergies, medical history, current medications)
             # 3. System validates the input data
             body = props['body']
-            patientRegister = PatientRegister(body)
+            patient_register_data = PatientRegister(body)
+
+            # 4. System creates the record in the primary database
+            create_patient_register_repo = CreatePatientRegisterPostgress()
+            create_resp = create_patient_register_repo.create(
+                patient_register_data.to_primitives()
+            )
+            print(f"create_resp {create_resp}")
+
             return CustomResponse.success(
-                msg="Patient registed successfully",
-                data=patientRegister
+                msg="Patient register created successfully",
+                data=patient_register_data.to_primitives()
             )
 
             # 5. System replicates the record to master-slave replicas for high availability
