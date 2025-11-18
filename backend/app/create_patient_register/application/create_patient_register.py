@@ -15,7 +15,7 @@ class CreatePatientRegisterProps(TypedDict):
 
 class CreatePatientRegisterUseCase:
     def __init__(self, create_patient_repo: CreatePatientRepo):
-        self.create_patient_repo = create_patient_repo
+        self._create_patient_repo = create_patient_repo
         pass
 
     def execute(self, props: CreatePatientRegisterProps) -> CustomResponse:
@@ -28,7 +28,7 @@ class CreatePatientRegisterUseCase:
             patient_register_data = PatientRegister(body)
 
             # 4. System creates the record in the primary database
-            create_resp = self.create_patient_repo.create(
+            create_resp = self._create_patient_repo.create(
                 patient_register_data.to_primitives()
             )
             if not create_resp:
