@@ -6,7 +6,7 @@ from app.create_patient_register.domain.models.patient_register import PatientRe
 from app.shared.domain.models.model_error_exeption import ModelErrorException
 from app.shared.domain.models.custom_response import CustomResponse
 # infra
-from app.create_patient_register.infra.persistence.db.create_patient_register_postgress import CreatePatientRegisterPostgress
+from app.create_patient_register.domain.repos.create_patient_repo import CreatePatientRepo
 
 
 class CreatePatientRegisterProps(TypedDict):
@@ -14,7 +14,8 @@ class CreatePatientRegisterProps(TypedDict):
 
 
 class CreatePatientRegisterUseCase:
-    def __init__(self):
+    def __init__(self, create_patient_repo: CreatePatientRepo):
+        self.create_patient_repo = create_patient_repo
         pass
 
     def execute(self, props: CreatePatientRegisterProps) -> CustomResponse:
@@ -27,8 +28,7 @@ class CreatePatientRegisterUseCase:
             patient_register_data = PatientRegister(body)
 
             # 4. System creates the record in the primary database
-            create_patient_register_repo = CreatePatientRegisterPostgress()
-            create_resp = create_patient_register_repo.create(
+            create_resp = self.create_patient_repo.create(
                 patient_register_data.to_primitives()
             )
             if not create_resp:
