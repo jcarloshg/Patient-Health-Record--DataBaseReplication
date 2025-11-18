@@ -22,7 +22,10 @@ class CreatePatientRegisterUseCase:
             # 3. System validates the input data
             body = props['body']
             patientRegister = PatientRegister(body)
-            return CustomResponse.success(msg="Patient register created successfully")
+            return CustomResponse.success(
+                msg="Patient registed successfully",
+                data=patientRegister
+            )
         except ModelErrorException as e:
             primitives = e.primitives()
             return CustomResponse.error(msg="Data validation error", data=primitives)

@@ -1,4 +1,4 @@
-from pydantic import BaseModel, UUID4, Field, ValidationError
+from pydantic import BaseModel, UUID4, Field, ValidationError, field_validator
 from datetime import date
 
 # domain
@@ -6,27 +6,59 @@ from app.shared.domain.models.model_error_exeption import ModelErrorException
 
 
 class PatientInformationData(BaseModel):
+
     uuid: UUID4 = Field(..., description="Unique identifier for the patient")
 
     # personal data
-    first_name: str = Field(..., min_length=1, max_length=50,
-                            description="Patient's first name")
-    last_name: str = Field(..., min_length=1, max_length=50,
-                           description="Patient's last name")
+    first_name: str = Field(...,
+                            min_length=1,
+                            max_length=50,
+                            description="Patient's first name"
+                            )
+    last_name: str = Field(...,
+                           min_length=1,
+                           max_length=50,
+                           description="Patient's last name"
+                           )
+
+    @field_validator('date_of_birth')
+    def validate_date_of_birth(cls, value):
+        min_date = date(1900, 1, 1)
+        max_date = date.today()
+        if not (min_date <= value <= max_date):
+            raise ValueError(
+                f"date_of_birth must be between {min_date} and {max_date}")
+        return value
     date_of_birth: date = Field(...,
-                                description="Date of birth in YYYY-MM-DD format")
+                                description="Date of birth in YYYY-MM-DD format"
+                                )
 
     # # contact details
-    # email: str = Field(..., regex=r"^[\w\.-]+@[\w\.-]+\.\w{2,4}$", description="Patient's email address")
-    # phone_number: str = Field(..., min_length=10, max_length=15, description="Patient's phone number")
-    # address: str = Field(..., min_length=1, max_length=100, description="Patient's address")
-    # emergency_contact: str = Field(..., min_length=1, max_length=50, description="Emergency contact details")
-
+    email: str = Field(...,
+                       pattern=r"^[\w\.-]+@[\w\.-]+\.\w{2,4}$",
+                       description="Patient's email address")
+    phone_number: str = Field(...,
+                              min_length=10,
+                              max_length=15,
+                              description="Patient's phone number")
+    address: str = Field(...,
+                         min_length=1,
+                         max_length=100,
+                         description="Patient's address")
+    emergency_contact: str = Field(...,
+                                   min_length=1,
+                                   max_length=50,
+                                   description="Emergency contact details")
     # # medical information
-
-    # allergies: list[str] = Field(default_factory=list, description="List of patient allergies")
-    # medical_history: list[str] = Field(default_factory=list, description="Patient's medical history")
-    # current_medications: list[str] = Field(default_factory=list, description="Current medications patient is taking")
+    allergies: list[str] = Field(
+        default_factory=list,
+        description="List of patient allergies")
+    medical_history: list[str] = Field(
+        default_factory=list,
+        description="Patient's medical history")
+    current_medications: list[str] = Field(
+        default_factory=list,
+        description="Current medications patient is taking")
 
 
 class PatientRegister:
