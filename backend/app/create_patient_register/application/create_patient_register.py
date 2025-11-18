@@ -1,3 +1,5 @@
+"""Use case for creating a patient register."""
+
 from typing import TypedDict, Any
 
 # domain
@@ -10,15 +12,19 @@ from app.create_patient_register.domain.repos.create_patient_repo import CreateP
 
 
 class CreatePatientRegisterProps(TypedDict):
+    """TypedDict for patient register creation properties."""
     body: dict[str, Any]
 
 
 class CreatePatientRegisterUseCase:
+
+    """Use case for creating a patient register."""
+
     def __init__(self, create_patient_repo: CreatePatientRepo):
         self._create_patient_repo = create_patient_repo
-        pass
 
     def execute(self, props: CreatePatientRegisterProps) -> CustomResponse:
+        """Execute the use case to create a patient register."""
         try:
 
             # 1. User enters patient demographic information (name, date of birth (DOB), identification number, contact details)
