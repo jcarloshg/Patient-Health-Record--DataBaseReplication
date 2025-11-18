@@ -10,8 +10,7 @@
 2. 🔧 Create and activate a virtual environment:
 
    ```sh
-   python3 -m venv .venv
-   source .venv/bin/activate
+   pipenv shell
    ```
 
 3. 📦 Install dependencies:
