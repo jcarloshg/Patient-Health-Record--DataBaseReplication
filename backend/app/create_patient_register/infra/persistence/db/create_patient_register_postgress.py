@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
 
+# infra - aux
 from app.shared.infra.persistence.postgres_sql.utils.connection import connection_engine
 from app.shared.infra.persistence.postgres_sql.utils.patient_register_model import PatientRegisterModel
 
