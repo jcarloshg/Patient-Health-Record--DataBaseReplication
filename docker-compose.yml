@@ -10,6 +10,13 @@ services:
       - POSTGRES_DB=main-db_patient_health_record
     volumes:
       - db-main:/var/lib/postgresql/data
+    networks:
+      - replication-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d main-db_patient_health_record"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   db-slave:
     container_name: db-slave
@@ -22,6 +29,20 @@ services:
       - POSTGRES_DB=db_patient_health_record
     volumes:
       - db-slave:/var/lib/postgresql/data
+    networks:
+      - replication-network
+    depends_on:
+      db-main:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+networks:
+  replication-network:
+    driver: bridge
 
 volumes:
   db-main:
