@@ -1,0 +1,31 @@
+services:
+  db-main:
+    container_name: db-main
+    build: ./database-main
+    ports:
+      - 5432:5432
+    environment:
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=123456
+      - POSTGRES_DB=main-db_patient_health_record
+    volumes:
+      - db-main:/var/lib/postgresql/data
+
+  db-slave:
+    container_name: db-slave
+    build: ./database-slave
+    ports:
+      - 5433:5432
+    environment:
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=123456
+      - POSTGRES_DB=db_patient_health_record
+    volumes:
+      - db-slave:/var/lib/postgresql/data
+
+volumes:
+  db-main:
+    driver: local
+
+  db-slave:
+    driver: local

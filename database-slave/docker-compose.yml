@@ -1,0 +1,18 @@
+services:
+  db-slave-01:
+    container_name: db-slave-01
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - 5432:5432
+    environment:
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=123456
+      - POSTGRES_DB=db_patient_health_record
+    volumes:
+      - db-patient-health-record-vol:/var/lib/postgresql/data
+
+volumes:
+  db-patient-health-record-vol:
+    driver: local
