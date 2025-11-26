@@ -14,25 +14,18 @@ create_patient_register_route = APIRouter()
 async def create_patient_register(request: Request):
     """Route to create a patient register."""
 
-    try:
+   # init use case
+    create_patient_repo = CreatePatientRegisterPostgress()
+    use_case = CreatePatientRegisterUseCase(create_patient_repo)
+    props = CreatePatientRegisterProps()
+    props['body'] = await request.json()
 
-        # init use case
-        create_patient_repo = CreatePatientRegisterPostgress()
-        use_case = CreatePatientRegisterUseCase(create_patient_repo)
-        props = CreatePatientRegisterProps()
-        props['body'] = await request.json()
+    # execute use case
+    response = use_case.execute(props)
+    response_json = response.to_JSON_response()
 
-        # execute use case
-        response = use_case.execute(props)
-        response_json = response.to_JSON_response()
-
-        # return response
-        return JSONResponse(
-            status_code=response_json["status_code"],
-            content=response_json["content"],
-        )
-    except Exception as e:
-        return JSONResponse(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            content={"error": "something went wrong", "details": str(e)},
-        )
+    # return response
+    return JSONResponse(
+        status_code=response_json["status_code"],
+        content=response_json["content"],
+    )

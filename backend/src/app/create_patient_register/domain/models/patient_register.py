@@ -68,7 +68,10 @@ class PatientRegister:
 
     def __init__(self, data: dict[str, Any]):
         try:
+
+            # validate data using Pydantic model
             self._data: PatientInformationData = PatientInformationData(**data)
+
         except ValidationError as e:
             property_name = e.errors()[0]['loc'][0]
             developer_message = e.errors()[0]['msg']

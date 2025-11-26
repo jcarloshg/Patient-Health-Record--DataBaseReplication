@@ -1,8 +1,10 @@
 """Use case for creating a patient register."""
 
+import uuid
 from typing import TypedDict, Any
 
 # domain
+from src.app.create_patient_register.domain.events.patient_register_created_event import PatientRegisterCreatedEvent
 from src.app.create_patient_register.domain.models.patient_register import PatientRegister
 # domain shared
 from src.app.shared.domain.models.model_error_exeption import ModelErrorException
@@ -40,13 +42,21 @@ class CreatePatientRegisterUseCase:
             if not create_resp:
                 return CustomResponse.error(msg="Something went wrong creating patient register")
 
+            # 5. System replicates the record to master-slave replicas for high availability
+            # 6. System asynchronously replicates to DR replica in geographically separated region
+            # 6.1 create necessary data
+            aggregate_uuid: uuid.UUID = uuid.uuid4()
+            # 6.2 create domain event
+            patient_register_created_event = PatientRegisterCreatedEvent(
+                data=patient_register_primitives,
+                aggregate_uuid=aggregate_uuid
+            )
+
+            # 7. System confirms successful creation and returns patient ID
             return CustomResponse.success(
                 msg="Patient register created successfully",
                 data=patient_register_primitives
             )
-            # 5. System replicates the record to master-slave replicas for high availability
-            # 6. System asynchronously replicates to DR replica in geographically separated region
-            # 7. System confirms successful creation and returns patient ID
 
         except ModelErrorException as e:
             primitives = e.primitives()
