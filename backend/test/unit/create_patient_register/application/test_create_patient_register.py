@@ -6,25 +6,25 @@ Unit tests for CreatePatientRegisterUseCase
 import uuid
 import pytest
 
-from app.create_patient_register.domain.repos.create_patient_repo import CreatePatientRepo
-from app.create_patient_register.infra.persistence.db.create_patient_register_postgress import CreatePatientRegisterPostgress
-from app.create_patient_register.application.create_patient_register import (
+from src.app.create_patient_register.domain.repos.create_patient_repo import CreatePatientRepo
+from src.app.create_patient_register.infra.persistence.db.create_patient_register_postgress import CreatePatientRegisterPostgress
+from src.app.create_patient_register.application.create_patient_register import (
     CreatePatientRegisterUseCase,
     CreatePatientRegisterProps
 )
 
 
 class TestCreatePatientRegister:
-
-    # Instance variables will be initialized in setup_method
+    """Instance variables will be initialized in setup_method"""
 
     def setup_method(self, method):
+        """Setup code before each test."""
         createPatientRegisterPostgress = CreatePatientRegisterPostgress()
         self.create_patient_repo = createPatientRegisterPostgress
         self.use_case = CreatePatientRegisterUseCase(self.create_patient_repo)
 
     def teardown_method(self, method):
-        # Teardown code after each test
+        """Teardown code after each test."""
         pass
 
     def test_create_patient_register_invalid_data(self):
