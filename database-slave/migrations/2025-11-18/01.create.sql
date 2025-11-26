@@ -4,12 +4,21 @@ CREATE TABLE PatientRegister (
     uuid UUID PRIMARY KEY DEFAULT uuid_generate_v4 (),
     first_name VARCHAR(50) NOT NULL,
     last_name VARCHAR(50) NOT NULL,
-    date_of_birth DATE NOT NULL CHECK (date_of_birth >= '1900-01-01' AND date_of_birth <= CURRENT_DATE),
+    date_of_birth DATE NOT NULL CHECK (
+        date_of_birth >= '1900-01-01'
+        AND date_of_birth <= CURRENT_DATE
+    ),
     email VARCHAR(254) NOT NULL,
     phone_number VARCHAR(15) NOT NULL,
     address VARCHAR(100) NOT NULL,
     emergency_contact VARCHAR(50) NOT NULL,
-    allergies TEXT[] DEFAULT ARRAY[]::TEXT[],
-    medical_history TEXT[] DEFAULT ARRAY[]::TEXT[],
-    current_medications TEXT[] DEFAULT ARRAY[]::TEXT[]
+    allergies TEXT [] DEFAULT ARRAY[]::TEXT [],
+    medical_history TEXT [] DEFAULT ARRAY[]::TEXT [],
+    current_medications TEXT [] DEFAULT ARRAY[]::TEXT []
 );
+
+ALTER TABLE PatientRegister
+ADD FULLTEXT full_name_searching (first_name, last_name);
+
+ALTER TABLE PatientRegister
+ADD FULLTEXT contact_searching (email, phone_number);

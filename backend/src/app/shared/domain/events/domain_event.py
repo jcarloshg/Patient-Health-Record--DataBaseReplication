@@ -18,7 +18,7 @@ class DomainEvent:
         self._occurred_on: datetime = datetime.now(timezone.utc)
         self.domain_name = domain_name
         self.data: dict[str, any] = data
-        self.aggregate_id = aggregate_uuid
+        self.aggregate_id: Optional[uuid.UUID] = aggregate_uuid
 
     def to_primitives(self) -> dict[str, any]:
         """Convert the event to a primitive dictionary format."""

@@ -7,7 +7,7 @@ import uuid
 import pytest
 
 from src.app.create_patient_register.domain.repos.create_patient_repo import CreatePatientRepo
-from src.app.create_patient_register.infra.persistence.db.create_patient_register_postgress import CreatePatientRegisterPostgress
+from src.app.create_patient_register.infra.persistence.main_db.create_patient_register_postgress import CreatePatientRegisterPostgress
 from src.app.create_patient_register.application.create_patient_register import (
     CreatePatientRegisterUseCase,
     CreatePatientRegisterProps

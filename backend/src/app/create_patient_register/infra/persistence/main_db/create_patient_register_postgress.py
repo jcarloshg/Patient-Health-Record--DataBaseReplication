@@ -6,8 +6,8 @@ from sqlalchemy.orm import Session
 from src.app.create_patient_register.domain.repos.create_patient_repo import CreatePatientRepo
 
 # # infra - aux
-from src.app.shared.infra.persistence.postgres_sql.utils.connection import connection_engine
-from src.app.shared.infra.persistence.postgres_sql.utils.patient_register_model import PatientRegisterModel
+from src.app.shared.infra.persistence.main_postgres_sql.utils.connection import connection_engine
+from src.app.shared.infra.persistence.main_postgres_sql.utils.patient_register_model import PatientRegisterModel
 
 
 class CreatePatientRegisterPostgress(CreatePatientRepo):

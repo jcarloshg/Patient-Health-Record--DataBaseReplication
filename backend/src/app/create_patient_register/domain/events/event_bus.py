@@ -14,8 +14,9 @@ class EventBus:
     def __init__(self):
         self._subscribers: dict[str, list] = {}
 
-    def subscribe(self, event_name: str, handler: DomainEventHandler):
+    def subscribe(self, handler: DomainEventHandler):
         """Subscribe a handler to an event."""
+        event_name: str = handler.susbscribed_to
         if event_name not in self._subscribers:
             self._subscribers[event_name] = []
         self._subscribers[event_name].append(handler)

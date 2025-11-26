@@ -12,8 +12,8 @@ class PatientRegisterCreatedEvent(DomainEvent):
 
     @staticmethod
     def event_name() -> str:
-        """Get the name of the event. -> 'PatientRegisterCreated'"""
-        return "PatientRegisterCreated"
+        """Get the name of the event. -> 'PATIENT_REGISTER_CREATED'"""
+        return "PATIENT_REGISTER_CREATED"
 
     def __init__(
         self,
