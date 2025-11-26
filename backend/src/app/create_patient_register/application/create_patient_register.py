@@ -2,13 +2,13 @@
 
 from typing import TypedDict, Any
 
-# domain
-from app.create_patient_register.domain.models.patient_register import PatientRegister
-# domain shared
-from app.shared.domain.models.model_error_exeption import ModelErrorException
-from app.shared.domain.models.custom_response import CustomResponse
-# infra
-from app.create_patient_register.domain.repos.create_patient_repo import CreatePatientRepo
+# # domain
+# from app.create_patient_register.domain.models.patient_register import PatientRegister
+# # domain shared
+# from app.shared.domain.models.model_error_exeption import ModelErrorException
+# from app.shared.domain.models.custom_response import CustomResponse
+# # infra
+# from app.create_patient_register.domain.repos.create_patient_repo import CreatePatientRepo
 
 
 class CreatePatientRegisterProps(TypedDict):

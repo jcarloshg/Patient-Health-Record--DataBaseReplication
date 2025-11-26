@@ -15,5 +15,7 @@
 
 3. 📦 Install dependencies:
    ```sh
-   pip install -r requirements.txt
+   pipenv shell install
+   # to check the packages and their dependencies
+   pipenv graph
    ```
