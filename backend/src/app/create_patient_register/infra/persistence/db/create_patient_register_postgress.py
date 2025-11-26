@@ -17,7 +17,7 @@ class CreatePatientRegisterPostgress(CreatePatientRepo):
         """Initialize CreatePatientRegisterPostgress repository."""
         super().__init__()
 
-    def create(self, patient_register) -> bool:
+    def create(self, patient_register: dict[str, any]) -> bool:
         """Create a patient register in the Postgres database."""
         try:
             db: Session = Session(connection_engine)
@@ -28,5 +28,6 @@ class CreatePatientRegisterPostgress(CreatePatientRepo):
             db.commit()
             return True
         except Exception as e:
+            """hola"""
             print(f"Error creating patient register: {e}")
             return False

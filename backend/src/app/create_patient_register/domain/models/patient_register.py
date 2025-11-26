@@ -1,8 +1,9 @@
+from typing import Any
 from pydantic import BaseModel, UUID4, Field, ValidationError, field_validator
 from datetime import date
 
 # domain
-from app.shared.domain.models.model_error_exeption import ModelErrorException
+from src.app.shared.domain.models.model_error_exeption import ModelErrorException
 
 
 class PatientInformationData(BaseModel):
@@ -23,6 +24,7 @@ class PatientInformationData(BaseModel):
 
     @field_validator('date_of_birth')
     def validate_date_of_birth(cls, value):
+        """Validate that date_of_birth is a valid past date."""
         min_date = date(1900, 1, 1)
         max_date = date.today()
         if not (min_date <= value <= max_date):
@@ -62,7 +64,9 @@ class PatientInformationData(BaseModel):
 
 
 class PatientRegister:
-    def __init__(self, data):
+    """Patient Register Domain Model"""
+
+    def __init__(self, data: dict[str, Any]):
         try:
             self._data: PatientInformationData = PatientInformationData(**data)
         except ValidationError as e:
@@ -73,5 +77,7 @@ class PatientRegister:
                 property_name=property_name
             ) from e
 
-    def to_primitives(self) -> dict:
-        return self._data.model_dump()
+    def to_primitives(self) -> dict[str, Any]:
+        """Convert the model to primitive dictionary format."""
+        model_dump = self._data.model_dump(mode="json")
+        return model_dump

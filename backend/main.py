@@ -6,10 +6,11 @@ from src.presentation.routes.create_patient_register import create_patient_regis
 
 app = FastAPI()
 
-app.include_router(create_patient_register_route)
-
 
 @app.get("/")
 def read_root():
     """Root endpoint of the API v2."""
     return "Hello, this is the main endpoint of the API v2"
+
+
+app.include_router(create_patient_register_route)
