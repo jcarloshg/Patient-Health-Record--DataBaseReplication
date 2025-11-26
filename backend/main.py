@@ -2,7 +2,11 @@
 
 from fastapi import FastAPI
 
+from src.presentation.routes.create_patient_register import create_patient_register_route
+
 app = FastAPI()
+
+app.include_router(create_patient_register_route)
 
 
 @app.get("/")
