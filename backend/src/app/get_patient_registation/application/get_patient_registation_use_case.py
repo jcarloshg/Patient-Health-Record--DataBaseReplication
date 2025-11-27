@@ -1,12 +1,13 @@
 """"""
 
 from typing import TypedDict
+from src.app.shared.domain.criteria.criteria import Criteria
 from src.app.shared.domain.models.custom_response import CustomResponse
 
 
 class GetPatientRegistationProps(TypedDict):
     """TypedDict for getting patient registration properties."""
-    body: dict[str, any]
+    criteria: Criteria
 
 
 class GetPatientRegistationUseCase:
@@ -18,7 +19,7 @@ class GetPatientRegistationUseCase:
             return CustomResponse.success(
                 msg="Get patient registration use case executed successfully",
                 data={
-                    "props": props,
+                    # "props": props,
                     "patient_registrations": []
                 }
             )

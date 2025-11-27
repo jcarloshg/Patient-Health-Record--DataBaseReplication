@@ -73,7 +73,7 @@ class Criteria:
 class CriteriaParser:
     """Criteria class to handle query parameters for patient registration."""
 
-    def dict_to_criteria(self, query_params:  dict[str, any]) -> None:
+    def dict_to_criteria(self, query_params:  dict[str, any]) -> Criteria:
         """Convert dictionary to criteria attributes."""
 
         criteria = Criteria()
