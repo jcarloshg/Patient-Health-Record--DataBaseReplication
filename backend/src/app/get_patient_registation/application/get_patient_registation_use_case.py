@@ -1,6 +1,9 @@
-""""""
+"""Get Patient Registration Use Case Module."""
 
 from typing import TypedDict
+# domain
+from src.app.create_patient_register.domain.repos.get_patient_repo import GetPatientRepo
+# infra
 from src.app.shared.domain.criteria.criteria import Criteria
 from src.app.shared.domain.models.custom_response import CustomResponse
 
@@ -13,14 +16,21 @@ class GetPatientRegistationProps(TypedDict):
 class GetPatientRegistationUseCase:
     """Use case for getting patient registration."""
 
+    def __init__(self, get_patient_repo: GetPatientRepo):
+        """Initialize GetPatientRegistationUseCase."""
+        self.get_patient_repo = get_patient_repo
+
     def execute(self, props: GetPatientRegistationProps) -> CustomResponse:
         """Use case for getting patient registration."""
         try:
+
+            criteria = props["criteria"]
+            patient_registrations = self.get_patient_repo.get(criteria)
+
             return CustomResponse.success(
                 msg="Get patient registration use case executed successfully",
                 data={
-                    # "props": props,
-                    "patient_registrations": []
+                    "registrations": patient_registrations
                 }
             )
         except RuntimeError:
