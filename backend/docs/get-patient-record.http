@@ -1,0 +1,1 @@
+GET http://localhost:8000/patient-register?0_field=brandName&0_operator=EQUAL&0_value=Puma&1_field=productName&1_operator=EQUAL&1_value=Laptop&orderBy=price&order=ASC

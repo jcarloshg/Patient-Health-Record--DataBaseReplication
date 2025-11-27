@@ -3,6 +3,8 @@
 from fastapi import FastAPI
 
 from src.presentation.routes.create_patient_register import create_patient_register_route
+from src.presentation.routes.get_patient_registation_routes import get_patient_registation_route
+
 
 app = FastAPI()
 
@@ -14,3 +16,4 @@ def read_root():
 
 
 app.include_router(create_patient_register_route)
+app.include_router(get_patient_registation_route)
