@@ -26,11 +26,14 @@ class GetPatientRegistationUseCase:
 
             criteria = props["criteria"]
             patient_registrations = self.get_patient_repo.get(criteria)
+            patient_registrations_primitives = [
+                registration.to_primitives() for registration in patient_registrations
+            ]
 
             return CustomResponse.success(
                 msg="Get patient registration use case executed successfully",
                 data={
-                    "registrations": patient_registrations
+                    "registrations": patient_registrations_primitives
                 }
             )
         except RuntimeError:

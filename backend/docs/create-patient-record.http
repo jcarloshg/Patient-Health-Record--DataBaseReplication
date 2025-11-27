@@ -2,9 +2,9 @@ POST http://localhost:8000/patient-register
 Content-Type: application/json
 
 {
-    "uuid": "7b878376-057d-4203-950a-f4bb4f2f9804",
-    "first_name": "Jane",
-    "last_name": "Smith",
+    "uuid": "7b878376-057d-4203-950a-f4bb4f2f9805",
+    "first_name": "Jose Carlos",
+    "last_name": "Huerta",
     "date_of_birth": "1990-05-15",
     "email": "jane.smith@example.com",
     "phone_number": "1234567890",
