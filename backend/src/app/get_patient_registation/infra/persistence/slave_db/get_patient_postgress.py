@@ -4,13 +4,12 @@ from sqlalchemy.orm import Session
 from sqlalchemy import text
 
 # domain - repos
-from src.app.create_patient_register.domain.models.patient_register import PatientInformationData, PatientRegister
+from src.app.create_patient_register.domain.models.patient_register import PatientRegister
 from src.app.create_patient_register.domain.repos.get_patient_repo import GetPatientRepo
 from src.app.shared.domain.criteria.criteria_to_sql import CriteriaToSQL
 
 # infra - aux
 from src.app.shared.infra.persistence.slave_postgres_sql.utils.slave_connection import slave_connection_engine
-from src.app.shared.infra.persistence.main_postgres_sql.utils.patient_register_model import PatientRegisterModel
 
 
 class GetPatientPostgress(GetPatientRepo):
