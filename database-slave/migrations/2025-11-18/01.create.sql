@@ -17,8 +17,37 @@ CREATE TABLE PatientRegister (
     current_medications TEXT [] DEFAULT ARRAY[]::TEXT []
 );
 
-ALTER TABLE PatientRegister
-ADD FULLTEXT full_name_searching (first_name, last_name);
+-- // ─────────────────────────────────────
+-- // ─────────────────────────────────────
+-- 1.
+-- adding indexes for performance optimization for columns frequently queried
+-- // ─────────────────────────────────────
+-- // ─────────────────────────────────────
 
+CREATE INDEX idx_first_name ON PatientRegister (lower(first_name));
+
+CREATE INDEX idx_last_name ON PatientRegister (lower(last_name));
+
+-- // ─────────────────────────────────────
+-- // ─────────────────────────────────────
+-- 2.
+-- normalizing email addresses to lowercase to ensure uniqueness and consistency
+-- // ─────────────────────────────────────
+-- // ─────────────────────────────────────
+
+-- Add a generated column 'email_normalized' that stores the lowercase, trimmed version of the email for normalization
+-- always -> computed at insert/update time
+-- stored -> physically stored in the table
 ALTER TABLE PatientRegister
-ADD FULLTEXT contact_searching (email, phone_number);
+ADD COLUMN email_normalized VARCHAR(254) GENERATED ALWAYS AS (LOWER(TRIM(email))) STORED;
+
+CREATE INDEX idx_patient_email_normalized ON PatientRegister (email_normalized);
+
+-- -- Update statistics for query planner
+-- ANALYZE PatientRegister;
+
+-- -- Rebuild indexes if needed
+-- REINDEX TABLE PatientRegister;
+
+-- -- Vacuum to reclaim space
+-- VACUUM ANALYZE PatientRegister;
