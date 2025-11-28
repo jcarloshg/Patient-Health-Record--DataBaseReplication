@@ -28,18 +28,21 @@ class GetPatientPostgress(GetPatientRepo):
             criteria_to_sql = CriteriaToSQL()
             criteria_to_sql.set_table_name("patientregister")
             criteria_to_sql.set_where_by_criteria(criteria)
-            # criteria_to_sql.set_order_by_criteria(criteria)
-            # criteria_to_sql.set_pagination_by_criteria(criteria)
+            criteria_to_sql.set_order_by_criteria(criteria)
+            criteria_to_sql.set_pagination_by_criteria(criteria)
             sql_query, params = criteria_to_sql.get_select_query_parametrized()
 
-            print(f"\n\nsql_query {sql_query, params} \n")
-
+            # execute query
+            print(f"\n\n ====== Executing SQL Query START ======")
+            print(f"sql_query -> {sql_query}")
             result = db.execute(text(sql_query), params)
+            print(f"====== Executing SQL Query END ====== \n")
 
             # Convert result to list of dictionaries
             rows = result.fetchall()
             columns = result.keys()
             result_dicts = [dict(zip(columns, row)) for row in rows]
+            db.close()
 
             patient_register_list: list[PatientRegister] = []
 

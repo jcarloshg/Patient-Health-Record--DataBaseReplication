@@ -1,2 +1,6 @@
-GET http://localhost:8000/patient-register?0_field=brandName&0_operator=EQUAL&0_value=Puma&1_field=productName&1_operator=EQUAL&1_value=Laptop&orderBy=price&order=ASC
+# GET http://localhost:8000/patient-register?0_field=brandName&0_operator=EQUAL&0_value=Puma&1_field=productName&1_operator=EQUAL&1_value=Laptop&orderBy=price&order=ASC
 
+
+# GET http://localhost:8000/patient-register?0_field=last_name&0_operator=EQUAL&0_value=Torres&page=1&per_page=1
+
+GET http://localhost:8000/patient-register?0_field=last_name&0_operator=EQUAL&0_value=Lee&page=1&per_page=1

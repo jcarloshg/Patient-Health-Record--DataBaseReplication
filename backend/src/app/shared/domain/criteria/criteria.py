@@ -90,7 +90,7 @@ class CriteriaParser:
 
         criteria = Criteria()
 
-        print(f"query_params {query_params}")
+        print(f"\n\n ====== Criteria ======")
 
         # get data for ordering
         order_by_key = "orderBy"
@@ -161,5 +161,7 @@ class CriteriaParser:
             pass
 
         print(f"criteria {criteria.to_dict()}")
+
+        print(f"====== Criteria END ======\n")
 
         return criteria
