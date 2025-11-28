@@ -6,70 +6,63 @@ from src.app.shared.domain.criteria.criteria import Criteria
 class CriteriaToSQL:
     """Convert Criteria object to SQL query string."""
 
-    def criteria_to_sql(self, criteria: Criteria) -> str:
-        """Convert Criteria object to SQL query string."""
-        sql_parts = []
+    def __init__(self):
+        self.table_name: str = ""
+        self.where_clause: list = []
+        self.params: dict = {}
+        self.order_clause: str = ""
+        self.pagination_clause: str = ""
+
+    def set_table_name(self, table_name: str) -> None:
+        """Set the table name for SQL queries."""
+        self.table_name = table_name
+
+    def set_where_by_criteria(self, criteria: Criteria) -> None:
+        """Set WHERE clause based on Criteria filters."""
 
         # Convert filters to SQL WHERE clause
-        if criteria.filters:
-            filter_clauses = []
-            for filter in criteria.filters:
-                clause = f"{filter.field} {filter.operator} '{filter.value}'"
-                filter_clauses.append(clause)
-            where_clause = " AND ".join(filter_clauses)
-            sql_parts.append(f"WHERE {where_clause}")
+        if not criteria.filters:
+            return
 
-        # Convert orders to SQL ORDER BY clause
-        if criteria.orders:
-            order_clause = f"ORDER BY {criteria.orders.field} {criteria.orders.direction}"
-            sql_parts.append(order_clause)
+        filter_clauses = []
+        index = 1
+        for flt in criteria.filters:
+            clause = f"{flt.field} {flt.get_operator_sql()} :where_param_{index}"
+            filter_clauses.append(clause)
+            self.params[f"where_param_{index}"] = flt.value
+            index += 1
+        self.where_clause = filter_clauses
 
-        # Convert pagination to SQL LIMIT and OFFSET clause
-        if criteria.pagination:
-            limit = criteria.pagination.per_page
-            offset = (criteria.pagination.page - 1) * \
-                criteria.pagination.per_page
-            pagination_clause = f"LIMIT {limit} OFFSET {offset}"
-            sql_parts.append(pagination_clause)
+    def set_order_by_criteria(self, criteria: Criteria) -> None:
+        """Set ORDER BY clause based on Criteria orders."""
+        if not criteria.orders:
+            return
 
-        # Combine all parts into a single SQL query string
-        sql_query = " ".join(sql_parts)
-        return sql_query
+        order_clause = f"ORDER BY {criteria.orders.field} {criteria.orders.direction}"
+        self.order_clause = order_clause
 
-    def criteria_to_sql_parametrized(self, criteria: Criteria) -> tuple[str, list]:
-        """
-        Convert Criteria object to a parametrized SQL query string and parameters.
+    def set_pagination_by_criteria(self, criteria: Criteria) -> None:
+        """Set pagination based on Criteria pagination."""
+        if not criteria.pagination:
+            return
 
-        Returns:
-            tuple: (sql_query: str, params: list)
-        """
-        sql_parts = []
-        params = []
+        limit = criteria.pagination.per_page
+        offset = (criteria.pagination.page - 1) * criteria.pagination.per_page
+        pagination_clause = f"LIMIT {limit} OFFSET {offset}"
+        self.pagination_clause = pagination_clause
 
-        # Convert filters to SQL WHERE clause with parameters
-        if criteria.filters:
-            filter_clauses = []
-            for filter in criteria.filters:
-                clause = f"{filter.field} {filter.operator} %s"
-                filter_clauses.append(clause)
-                params.append(filter.value)
-            where_clause = " AND ".join(filter_clauses)
-            sql_parts.append(f"WHERE {where_clause}")
+    def get_select_query_parametrized(self) -> tuple[str, dict]:
+        """Get the full SQL query string and parameters."""
+        query = f"SELECT * FROM {self.table_name}"
 
-        # Convert orders to SQL ORDER BY clause
-        if criteria.orders:
-            order_clause = f"ORDER BY {criteria.orders.field} {criteria.orders.direction}"
-            sql_parts.append(order_clause)
+        if self.where_clause:
+            where_statement = " AND ".join(self.where_clause)
+            query += f" WHERE {where_statement}"
 
-        # Convert pagination to SQL LIMIT and OFFSET clause
-        if criteria.pagination:
-            limit = criteria.pagination.per_page
-            offset = (criteria.pagination.page - 1) * \
-                criteria.pagination.per_page
-            pagination_clause = f"LIMIT %s OFFSET %s"
-            sql_parts.append(pagination_clause)
-            params.extend([limit, offset])
+        if self.order_clause:
+            query += f" {self.order_clause}"
 
-        # Combine all parts into a single SQL query string
-        sql_query = " ".join(sql_parts)
-        return sql_query, params
+        if self.pagination_clause:
+            query += f" {self.pagination_clause}"
+
+        return query, self.params

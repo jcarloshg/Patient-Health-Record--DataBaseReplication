@@ -24,14 +24,18 @@ class GetPatientPostgress(GetPatientRepo):
         try:
             db: Session = Session(slave_connection_engine)
 
+            # Build SQL query
             criteria_to_sql = CriteriaToSQL()
-            # query_str, params = criteria_to_sql.criteria_to_sql_parametrized(
-            #     criteria
-            # )
+            criteria_to_sql.set_table_name("patientregister")
+            criteria_to_sql.set_where_by_criteria(criteria)
+            # criteria_to_sql.set_order_by_criteria(criteria)
+            # criteria_to_sql.set_pagination_by_criteria(criteria)
+            sql_query, params = criteria_to_sql.get_select_query_parametrized()
 
-            sql_query = "SELECT * FROM patientregister LIMIT 100"
+            print(f"\n\nsql_query {sql_query, params} \n")
 
-            result = db.execute(text(sql_query))
+            result = db.execute(text(sql_query), params)
+
             # Convert result to list of dictionaries
             rows = result.fetchall()
             columns = result.keys()

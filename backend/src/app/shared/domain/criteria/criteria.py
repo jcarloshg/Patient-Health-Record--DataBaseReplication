@@ -21,6 +21,18 @@ class Filter:
         self.operator = operator
         self.value = value
 
+    def get_operator_sql(self) -> str:
+        """Get SQL operator from filter operator."""
+        operator_mapping = {
+            "EQUAL": "=",
+            "NOT_EQUAL": "!=",
+            "LESS_THAN": "<",
+            "LESS_THAN_OR_EQUAL": "<=",
+            "GREATER_THAN": ">",
+            "GREATER_THAN_OR_EQUAL": ">="
+        }
+        return operator_mapping.get(self.operator, "=")
+
 
 OrderDirection = Literal["ASC", "DESC"]
 
@@ -81,31 +93,15 @@ class CriteriaParser:
         print(f"query_params {query_params}")
 
         # get data for ordering
-        try:
-
-            order_by_key = "orderBy"
-            order_dir_key = "order"
-
-            exist_order_key = order_by_key in query_params
-            exist_order_dir_key = order_dir_key in query_params
-
-            if not exist_order_key and not exist_order_dir_key:
-                pass
-
+        order_by_key = "orderBy"
+        order_dir_key = "order"
+        if order_by_key in query_params and order_dir_key in query_params:
             order = Order(
                 field=query_params[order_by_key],
                 direction=query_params[order_dir_key]
             )
-
             print(f"order {order.__dict__}")
-
             criteria.set_orders(order)
-
-            # # Remove order_by_key and order_dir_key from query_params if they exist
-            # query_params.pop(order_by_key, None)
-            # query_params.pop(order_dir_key, None)
-        except RuntimeError:
-            pass
 
         # Parse filters from query_params
         # full_name, contact
