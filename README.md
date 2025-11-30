@@ -123,7 +123,7 @@ The Patient Health Record (PHR) system implements a **Clean Architecture** patte
 **Primary Database (db-main):**
 
 - **Host:** localhost:5432
-- **Database Name:** `main-db_patient_health_record`
+- **Database Name:** `db_patient_health_record`
 - **Role:** Master/Primary - Handles all write operations
 - **WAL Level:** `replica` (enables streaming replication)
 - **Max WAL Senders:** 10 concurrent replication connections
@@ -343,7 +343,7 @@ app/
 # Database Connection
 POSTGRES_USER=admin
 POSTGRES_PASSWORD=****** (secured)
-POSTGRES_DB=main-db_patient_health_record
+POSTGRES_DB=db_patient_health_record
 POSTGRES_HOST=localhost
 POSTGRES_PORT=5432
 

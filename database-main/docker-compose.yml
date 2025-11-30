@@ -9,7 +9,7 @@ services:
     environment:
       - POSTGRES_USER=admin
       - POSTGRES_PASSWORD=123456
-      - POSTGRES_DB=main-db_patient_health_record
+      - POSTGRES_DB=db_patient_health_record
     volumes:
       - main-db-patient-health-record-vol:/var/lib/postgresql/data
 

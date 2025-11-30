@@ -24,7 +24,7 @@ class DatabaseConfig:
         self.user = self._get_env_var('POSTGRES_USER', 'admin')
         self.password = self._get_env_var('POSTGRES_PASSWORD', '123456')
         self.database = self._get_env_var(
-            'POSTGRES_DB', 'main-db_patient_health_record')
+            'POSTGRES_DB', 'db_patient_health_record')
         self.host = self._get_env_var('POSTGRES_HOST', 'localhost')
         self.port = self._get_env_var('POSTGRES_PORT', '5432')
 

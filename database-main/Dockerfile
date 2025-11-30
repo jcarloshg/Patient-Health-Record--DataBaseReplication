@@ -4,7 +4,7 @@ FROM postgres:15.13
 # Set environment variables for PostgreSQL
 ENV POSTGRES_USER=admin
 ENV POSTGRES_PASSWORD=123456
-ENV POSTGRES_DB=main-db_patient_health_record
+ENV POSTGRES_DB=db_patient_health_record
 
 #2. 
 # Replication settings
@@ -20,6 +20,14 @@ COPY migrations/2025-11-18/*.sql /docker-entrypoint-initdb.d/
 COPY scripts/setup-replication.sh /docker-entrypoint-initdb.d/99-setup-replication.sh
 # Make the replication setup script executable
 RUN chmod +x /docker-entrypoint-initdb.d/99-setup-replication.sh
+
+# 5.
+# Create the /manage-db directory
+RUN mkdir -p /manage-db
+# Copy add-listener.sh script
+COPY scripts/add-listener.sh /manage-db/add-listener.sh
+# Make the add-listener.sh script executable
+RUN chmod +x /manage-db/add-listener.sh
 
 # Ensure the script is run on container startup
 ENTRYPOINT ["docker-entrypoint.sh"]

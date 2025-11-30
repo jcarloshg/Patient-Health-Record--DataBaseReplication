@@ -39,7 +39,7 @@ docker-compose logs -f
 #### On Primary (db-main):
 ```bash
 # Check replication status
-docker exec -it db-main psql -U admin -d main-db_patient_health_record -c "SELECT * FROM pg_stat_replication;"
+docker exec -it db-main psql -U admin -d db_patient_health_record -c "SELECT * FROM pg_stat_replication;"
 
 # You should see the replica connection listed
 ```
@@ -56,7 +56,7 @@ docker exec -it db-slave psql -U admin -d db_patient_health_record -c "SELECT pg
 
 #### Insert data on Primary:
 ```bash
-docker exec -it db-main psql -U admin -d main-db_patient_health_record -c "
+docker exec -it db-main psql -U admin -d db_patient_health_record -c "
 INSERT INTO PatientRegister (first_name, last_name, date_of_birth, email, phone_number, address, emergency_contact)
 VALUES ('John', 'Doe', '1990-01-01', 'john.doe@example.com', '1234567890', '123 Main St', 'Jane Doe');
 "
@@ -80,7 +80,7 @@ The data should appear on the replica within seconds!
 
 **Primary (Write):**
 ```
-postgresql://admin:123456@localhost:5432/main-db_patient_health_record
+postgresql://admin:123456@localhost:5432/db_patient_health_record
 ```
 
 **Replica (Read):**
@@ -98,7 +98,7 @@ In your application, configure:
 
 ### Check Replication Lag
 ```bash
-docker exec -it db-main psql -U admin -d main-db_patient_health_record -c "
+docker exec -it db-main psql -U admin -d db_patient_health_record -c "
 SELECT 
     client_addr,
     state,
