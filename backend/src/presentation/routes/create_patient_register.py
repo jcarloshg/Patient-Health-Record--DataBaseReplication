@@ -36,14 +36,14 @@ async def create_patient_register(request: Request):
         susbscribed_to=PatientRegisterCreatedEvent.event_name(),
         create_patient_repo=create_patient_repo
     )
-    replicate_record_on_slave_handler = ReplicateRecordOnSlaveHandler(
-        susbscribed_to=PatientRegisterCreatedEvent.event_name(),
-        replicate_patient_repo=replicate_patient_repo
-    )
+    # replicate_record_on_slave_handler = ReplicateRecordOnSlaveHandler(
+    #     susbscribed_to=PatientRegisterCreatedEvent.event_name(),
+    #     replicate_patient_repo=replicate_patient_repo
+    # )
     # subscribe the handlers to the event bus
     event_bus.subscribe(logging_create_register_handler)
     event_bus.subscribe(persist_on_db_master_handler)
-    event_bus.subscribe(replicate_record_on_slave_handler)
+    # event_bus.subscribe(replicate_record_on_slave_handler)
 
     use_case = CreatePatientRegisterUseCase(event_bus=event_bus)
     props = CreatePatientRegisterProps()
