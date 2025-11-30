@@ -139,13 +139,13 @@ class CriteriaParser:
             page_value = 1
             per_page_value = 10
 
-            if page_key in query_params and query_params[page_key].isdigit():
+            if page_key in query_params and query_params[page_key]:
                 value_aux = int(query_params[page_key])
-                page_value = value_aux if value_aux > page_value else page_value
+                page_value = value_aux if value_aux > 0 else page_value
 
-            if per_page_key in query_params and query_params[per_page_key].isdigit():
+            if per_page_key in query_params and query_params[per_page_key]:
                 value_aux = int(query_params[per_page_key])
-                per_page_value = value_aux if value_aux > per_page_value else per_page_value
+                per_page_value = value_aux if value_aux > 0 else per_page_value
 
             pagination = Pagination(
                 page=page_value,

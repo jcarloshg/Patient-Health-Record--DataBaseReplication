@@ -23,8 +23,7 @@ class SlaveDatabaseConfig:
     def __init__(self):
         self.user = self._get_env_var('SLAVE_POSTGRES_USER', 'admin')
         self.password = self._get_env_var('SLAVE_POSTGRES_PASSWORD', '123456')
-        self.database = self._get_env_var(
-            'SLAVE_POSTGRES_DB', 'db_patient_health_record')
+        self.database = self._get_env_var('SLAVE_POSTGRES_DB', 'db_patient_health_record')
         self.host = self._get_env_var('SLAVE_POSTGRES_HOST', 'localhost')
         self.port = self._get_env_var('SLAVE_POSTGRES_PORT', '5433')
 

@@ -40,8 +40,3 @@ async def get_patient_registration(request: Request):
         status_code=response_json["status_code"],
         content=response_json["content"],
     )
-    # return JSONResponse(
-    #     status_code=status.HTTP_200_OK,
-    #     content={
-    #         "message": "This is a placeholder response for patient registration."},
-    # )
