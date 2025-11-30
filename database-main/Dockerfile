@@ -21,5 +21,9 @@ COPY scripts/setup-replication.sh /docker-entrypoint-initdb.d/99-setup-replicati
 # Make the replication setup script executable
 RUN chmod +x /docker-entrypoint-initdb.d/99-setup-replication.sh
 
+# Ensure the script is run on container startup
+ENTRYPOINT ["docker-entrypoint.sh"]
+CMD ["postgres"]
+
 
 EXPOSE 5432

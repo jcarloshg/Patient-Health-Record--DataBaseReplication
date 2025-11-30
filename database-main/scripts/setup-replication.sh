@@ -47,6 +47,6 @@ echo "✅ Authentication configuration updated"
 
 # Reload PostgreSQL configuration to apply changes to postgresql.conf and pg_hba.conf
 # This is crucial as the changes are written to disk.
-psql -U "$POSTGRES_USER" -d "$POSTRES_DB" -c "SELECT pg_reload_conf();"
+psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "SELECT pg_reload_conf();"
 
 echo "🎉 Primary server configuration completed! The primary is ready for replicas to connect."
