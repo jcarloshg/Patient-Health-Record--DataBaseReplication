@@ -5,41 +5,97 @@ services:
     ports:
       - 5432:5432
     environment:
+      # Main DB credentials
       - POSTGRES_USER=admin
       - POSTGRES_PASSWORD=123456
-      - POSTGRES_DB=main-db_patient_health_record
+      - POSTGRES_DB=db_patient_health_record
+      # Replication settings (used by setup-replication.sh)
+      - REPLICATION_USER=repl_user
+      - REPLICATION_PASSWORD=your_secure_replication_password
     volumes:
       - db-main:/var/lib/postgresql/data
     networks:
       - replication-network
     healthcheck:
       test:
-        ["CMD-SHELL", "pg_isready -U admin -d main-db_patient_health_record"]
+        - CMD-SHELL
+        - pg_isready -U admin -d db_patient_health_record
       interval: 10s
       timeout: 5s
       retries: 5
+    restart: unless-stopped
 
-  db-slave:
-    container_name: db-slave
+  db-slave-01:
+    container_name: db-slave-01
     build: ./database-slave
     ports:
       - 5433:5432
     environment:
+      # Replica DB credentials (must match primary for replication)
       - POSTGRES_USER=admin
       - POSTGRES_PASSWORD=123456
       - POSTGRES_DB=db_patient_health_record
+      # Replication settings (used by setup-replica.sh)
+      - REPLICATION_USER=repl_user
+      - REPLICATION_PASSWORD=your_secure_replication_password
     volumes:
-      - db-slave:/var/lib/postgresql/data
+      - db-slave-01:/var/lib/postgresql/data
     networks:
       - replication-network
     depends_on:
       db-main:
         condition: service_healthy
-    # healthcheck:
-    #   test: ["CMD-SHELL", "pg_isready -U admin"]
-    #   interval: 10s
-    #   timeout: 5s
-    #   retries: 5
+    # Optionally, you can enable healthcheck for the replica as well
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - pg_isready -U admin -d db_patient_health_record
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  db-slave-02:
+    container_name: db-slave-02
+    build: ./database-slave
+    ports:
+      - 5434:5432
+    environment:
+      # Replica DB credentials (must match primary for replication)
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=123456
+      - POSTGRES_DB=db_patient_health_record
+      # Replication settings (used by setup-replica.sh)
+      - REPLICATION_USER=repl_user
+      - REPLICATION_PASSWORD=your_secure_replication_password
+    volumes:
+      - db-slave-02:/var/lib/postgresql/data
+    networks:
+      - replication-network
+    depends_on:
+      db-main:
+        condition: service_healthy
+    # Optionally, you can enable healthcheck for the replica as well
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - pg_isready -U admin -d db_patient_health_record
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  ubuntu-service:
+    image: ubuntu:latest
+    container_name: ubuntu-service
+    command:
+      [
+        "bash",
+        "-c",
+        "apt-get update && apt-get install -y iputils-ping && tail -f /dev/null",
+      ]
+    networks:
+      - replication-network
 
 networks:
   replication-network:
@@ -49,5 +105,8 @@ volumes:
   db-main:
     driver: local
 
-  db-slave:
+  db-slave-01:
+    driver: local
+
+  db-slave-02:
     driver: local

@@ -1,4 +1,5 @@
 
+import time
 import requests
 import random
 import uuid
@@ -165,6 +166,7 @@ def register_patient(i):
         else:
             print(
                 f"Failed to register patient {intent}. Status code: {response.status_code}")
+        # time.sleep(4)
     return
 
 
