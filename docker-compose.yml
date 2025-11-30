@@ -8,6 +8,9 @@ services:
       - POSTGRES_USER=admin
       - POSTGRES_PASSWORD=123456
       - POSTGRES_DB=main-db_patient_health_record
+      # Replication settings
+      - REPLICATION_USER=repl_user
+      - REPLICATION_PASSWORD=your_secure_replication_password
     volumes:
       - db-main:/var/lib/postgresql/data
     networks:
