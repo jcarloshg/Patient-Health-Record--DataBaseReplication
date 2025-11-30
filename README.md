@@ -1,5 +1,96 @@
 # 🏥 Patient Health Record (PHR) System - 🚧 Under Development...
 
+## Overview
+
+A secure, cloud-hosted Patient Health Record (PHR) system designed with **PostgreSQL Streaming Replication** to ensure high availability, disaster recovery, and regulatory compliance for healthcare environments.
+
+### 🔄 Data Replication Architecture
+
+- **Master-Slave Replication:** Implements PostgreSQL WAL-based streaming replication with one primary database (db-main) and two hot standby replicas (db-slave-01, db-slave-02)
+- **Real-Time Synchronization:** Sub-second replication lag under normal conditions with asynchronous streaming for optimal performance
+- **Read Scalability:** Write operations directed to primary (port 5432), read operations distributed across replicas (ports 5433, 5434) for horizontal scaling
+- **High Availability:** Hot standby replicas can be promoted to primary during failover scenarios, ensuring minimal downtime
+- **Data Protection:** Multiple data copies across isolated containers with automatic WAL streaming and point-in-time recovery capabilities
+
+### 🏗️ System Architecture Diagram
+
+```
+┌────────────────────────────────────────────────────────────────────────────────┐
+│                          🌐 Application Layer                                   │
+│                       (FastAPI + Uvicorn - Python 3.12)                        │
+│                                                                                 │
+│  ┌─────────────────────────────────────────────────────────────────────────┐  │
+│  │  📡 REST API Endpoints                                                  │  │
+│  │  • POST /patient-register (Create)  • GET /patient-register (Read)     │  │
+│  └─────────────────────────────────────────────────────────────────────────┘  │
+└────────────────────┬──────────────────────────────────────┬────────────────────┘
+                     │                                      │
+                     │ Write Operations                     │ Read Operations
+                     │ (Create, Update, Delete)             │ (Query with Criteria)
+                     │                                      │
+┌────────────────────▼──────────────────┐    ┌─────────────▼─────────────────────┐
+│   🔌 Connection Pool (Write)          │    │   🔌 Connection Pool (Read)       │
+│   • Pool Size: 5                      │    │   • Distributed Load              │
+│   • Max Overflow: 10                  │    │   • Read-Only Queries             │
+│   • Timeout: 30s                      │    │   • Criteria Pattern              │
+└────────────────────┬──────────────────┘    └─────────────┬─────────────────────┘
+                     │                                      │
+                     │                                      │
+┌────────────────────┼──────────────────────────────────────┼────────────────────┐
+│                    │       🐳 Docker Network              │                    │
+│                    │       (replication-network)          │                    │
+│                    │                                      │                    │
+│     ┌──────────────▼──────────────┐                      │                    │
+│     │   💾 db-main (Primary)      │                      │                    │
+│     │   ━━━━━━━━━━━━━━━━━━━━━━━  │                      │                    │
+│     │   🔹 Port: 5432             │                      │                    │
+│     │   🔹 Role: Master           │                      │                    │
+│     │   🔹 Operations: READ+WRITE │                      │                    │
+│     │   🔹 PostgreSQL 15.13       │                      │                    │
+│     │                             │                      │                    │
+│     │   WAL Configuration:        │                      │                    │
+│     │   • wal_level = replica     │                      │                    │
+│     │   • max_wal_senders = 5     │                      │                    │
+│     │   • archive_mode = on       │                      │                    │
+│     └───────┬──────────────┬──────┘                      │                    │
+│             │              │                             │                    │
+│             │ WAL Stream   │ WAL Stream                  │                    │
+│             │ (Async)      │ (Async)                     │                    │
+│    ┌────────▼────────┐  ┌──▼──────────────┐             │                    │
+│    │  💾 db-slave-01 │  │  💾 db-slave-02 │◄────────────┘                    │
+│    │  (Hot Standby)  │  │  (Hot Standby)  │                                  │
+│    │  ─────────────  │  │  ─────────────  │                                  │
+│    │  🔹 Port: 5433  │  │  🔹 Port: 5434  │                                  │
+│    │  🔹 READ ONLY   │  │  🔹 READ ONLY   │                                  │
+│    │  🔹 Replication │  │  🔹 Replication │                                  │
+│    │     User: repl  │  │     User: repl  │                                  │
+│    │  🔹 Recovery    │  │  🔹 Recovery    │                                  │
+│    │     Mode: ON    │  │     Mode: ON    │                                  │
+│    └─────────────────┘  └─────────────────┘                                  │
+│                                                                                │
+│  📊 Monitoring:                                                                │
+│  • pg_stat_replication (Primary)                                              │
+│  • pg_is_in_recovery() (Replicas)                                             │
+│  • Replication Lag Monitoring                                                 │
+│  • Health Checks: pg_isready (10s interval)                                   │
+└────────────────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────────────────────────┐
+│                          💾 Persistent Storage Layer                           │
+│                                                                                 │
+│    🗃️ db-main-volume      🗃️ db-slave-01-volume      🗃️ db-slave-02-volume   │
+│    (Docker Volume)        (Docker Volume)            (Docker Volume)          │
+└────────────────────────────────────────────────────────────────────────────────┘
+```
+
+### 🎯 Key Features
+
+- **Clean Architecture:** Domain-Driven Design with clear separation between presentation, application, domain, and infrastructure layers
+- **Type-Safe Validation:** Multi-layer validation using Pydantic (application) and PostgreSQL constraints (database)
+- **Flexible Querying:** Advanced Criteria Pattern for dynamic, type-safe queries with filters, ordering, and pagination
+- **Security-First:** MD5 authentication, network isolation, SQL injection prevention through SQLAlchemy ORM
+- **Production-Ready:** Connection pooling, health checks, monitoring tools, and comprehensive error handling
+
 ## 📋 Table of Contents
 
 - [🏥 Patient Health Record (PHR) System - 🚧 Under Development...](#-patient-health-record-phr-system----under-development)
@@ -219,15 +310,18 @@ The primary database is configured as the master node that handles all write ope
 **Setup Process (`setup-replication.sh`):**
 
 1. **🔑 Replication User Creation**
+
    ```sql
-   CREATE USER repl_user WITH REPLICATION 
+   CREATE USER repl_user WITH REPLICATION
    ENCRYPTED PASSWORD 'your_secure_replication_password';
    ```
+
    - Dedicated user with `REPLICATION` privilege
    - Used exclusively for replication connections
    - Separate from application database user
 
 2. **⚙️ PostgreSQL Configuration (`postgresql.conf`)**
+
    ```ini
    # Core replication settings
    listen_addresses = '*'              # Accept connections from any IP
@@ -237,9 +331,11 @@ The primary database is configured as the master node that handles all write ope
    ```
 
 3. **🔐 Authentication Configuration (`pg_hba.conf`)**
+
    ```
    host replication repl_user 0.0.0.0/0 md5
    ```
+
    - Allows replication connections from any IP in the Docker network
    - MD5 password authentication (upgradeable to SCRAM-SHA-256)
    - Restricted to the `replication` database
@@ -252,6 +348,7 @@ The primary database is configured as the master node that handles all write ope
    - Ensures settings take effect immediately
 
 **Dockerfile Configuration:**
+
 ```dockerfile
 # Environment variables
 ENV POSTGRES_USER=admin
@@ -277,14 +374,17 @@ Replica databases are configured as hot standby nodes that continuously stream c
 **Setup Process (`setup-replica.sh`):**
 
 1. **🧹 Data Directory Preparation**
+
    ```bash
    # Remove existing data to ensure clean replication
    rm -rf "$PGDATA"/*
    ```
+
    - Ensures no conflicting data exists
    - Prepares for base backup from primary
 
 2. **⏳ Primary Server Readiness Check**
+
    ```bash
    until PGPASSWORD="$REPLICATION_PASSWORD" \
      pg_isready -h db-main -p 5432 -U "$REPLICATION_USER"; do
@@ -292,11 +392,13 @@ Replica databases are configured as hot standby nodes that continuously stream c
      sleep 3
    done
    ```
+
    - Waits for primary database to be fully operational
    - Uses Docker network DNS resolution (`db-main` hostname)
    - Prevents replication setup failures due to timing issues
 
 3. **📦 Base Backup Creation**
+
    ```bash
    PGPASSWORD="$REPLICATION_PASSWORD" pg_basebackup \
      -h db-main \
@@ -307,18 +409,21 @@ Replica databases are configured as hot standby nodes that continuously stream c
      -W \           # Force password prompt (use PGPASSWORD env)
      -R             # Create standby configuration automatically
    ```
+
    - Clones entire database from primary using streaming protocol
    - Creates initial data consistency point
    - Automatically generates replication configuration
 
 4. **⚙️ Standby Configuration**
+
    ```ini
    # postgresql.conf additions
    hot_standby = on
-   primary_conninfo = 'host=db-main port=5432 
-                       user=repl_user 
+   primary_conninfo = 'host=db-main port=5432
+                       user=repl_user
                        password=your_secure_replication_password'
    ```
+
    - `hot_standby`: Enables read queries on replica
    - `primary_conninfo`: Connection string for streaming replication
 
@@ -331,6 +436,7 @@ Replica databases are configured as hot standby nodes that continuously stream c
    - Required by PostgreSQL for operation
 
 **Dockerfile Configuration:**
+
 ```dockerfile
 # Environment variables (must match primary)
 ENV POSTGRES_USER=admin
@@ -346,21 +452,23 @@ COPY migrations/2025-11-18/*.sql /docker-entrypoint-initdb.d/
 COPY scripts/setup-replica.sh /usr/local/bin/setup-replica.sh
 
 # Custom entrypoint to run setup before postgres
-ENTRYPOINT ["/bin/bash", "-c", 
+ENTRYPOINT ["/bin/bash", "-c",
   "/usr/local/bin/setup-replica.sh && docker-entrypoint.sh postgres"]
 ```
 
 #### 🐳 Docker Compose Orchestration
 
 **Service Dependencies:**
+
 ```yaml
 db-slave-01:
   depends_on:
     db-main:
-      condition: service_healthy  # Wait for primary to be healthy
+      condition: service_healthy # Wait for primary to be healthy
 ```
 
 **Health Check Configuration:**
+
 ```yaml
 healthcheck:
   test: ["CMD-SHELL", "pg_isready -U admin -d db_patient_health_record"]
@@ -368,21 +476,25 @@ healthcheck:
   timeout: 5s
   retries: 5
 ```
+
 - Ensures database is ready before dependents start
 - Prevents replication setup failures
 - Enables orchestration-level health monitoring
 
 **Network Configuration:**
+
 ```yaml
 networks:
   replication-network:
     driver: bridge
 ```
+
 - Isolated network for database communication
 - DNS resolution between services (db-main, db-slave-01, db-slave-02)
 - Security through network segmentation
 
 **Volume Persistence:**
+
 ```yaml
 volumes:
   db-main:
@@ -392,6 +504,7 @@ volumes:
   db-slave-02:
     driver: local
 ```
+
 - Separate volumes for each database instance
 - Data persists across container restarts
 - Enables backup and disaster recovery
@@ -399,26 +512,31 @@ volumes:
 #### 📊 Replication Monitoring
 
 **Check Replication Status (Primary):**
+
 ```sql
 SELECT * FROM pg_stat_replication;
 ```
+
 Returns information about active replication connections:
+
 - `application_name`: Replica identifier
 - `state`: streaming, catchup, or startup
 - `sent_lsn`, `write_lsn`, `flush_lsn`: WAL positions
 - `sync_state`: async or sync
 
 **Check Replica Status (Replica):**
+
 ```sql
 -- Verify running in recovery mode
 SELECT pg_is_in_recovery();  -- Should return 't' (true)
 
 -- Check replication lag
-SELECT 
+SELECT
     now() - pg_last_xact_replay_timestamp() AS replication_lag;
 ```
 
 **Monitor WAL Status:**
+
 ```sql
 -- Primary: Check WAL sender processes
 SELECT pid, usename, application_name, client_addr, state, sync_state
@@ -432,6 +550,7 @@ FROM pg_stat_wal_receiver;
 #### 🔄 Replication Workflow
 
 **Write Operation Flow:**
+
 ```
 1. Application → db-main (Port 5432)
 2. db-main processes INSERT/UPDATE/DELETE
@@ -442,6 +561,7 @@ FROM pg_stat_wal_receiver;
 ```
 
 **Read Operation Flow:**
+
 ```
 1. Application → db-slave-01 (Port 5433) OR db-slave-02 (Port 5434)
 2. Replica serves read-only queries
@@ -452,21 +572,25 @@ FROM pg_stat_wal_receiver;
 #### 🛡️ Replication Features & Benefits
 
 1. **🚀 Zero Downtime Reads**
+
    - Read queries served by replicas without impacting primary
    - Horizontal read scalability with multiple replicas
    - Reduced latency through load distribution
 
 2. **🔄 Continuous Synchronization**
+
    - Near real-time data replication (sub-second lag typical)
    - Asynchronous streaming for performance
    - Automatic reconnection on network interruptions
 
 3. **💪 High Availability**
+
    - Replicas can be promoted to primary on failure
    - Manual failover capability with minimal data loss
    - Foundation for automatic failover implementations
 
 4. **📈 Performance Benefits**
+
    - Read load offloaded from primary
    - Primary dedicated to write operations
    - Improved application response times
@@ -479,6 +603,7 @@ FROM pg_stat_wal_receiver;
 #### ⚠️ Operational Considerations
 
 **Connection Management:**
+
 ```
 Primary (Write):  postgresql://admin:123456@localhost:5432/db_patient_health_record
 Replica 1 (Read): postgresql://admin:123456@localhost:5433/db_patient_health_record
@@ -486,6 +611,7 @@ Replica 2 (Read): postgresql://admin:123456@localhost:5434/db_patient_health_rec
 ```
 
 **Application Configuration Best Practices:**
+
 - Configure separate connection pools for read and write operations
 - Route write operations exclusively to primary (port 5432)
 - Distribute read operations across replicas (ports 5433, 5434)
@@ -493,12 +619,14 @@ Replica 2 (Read): postgresql://admin:123456@localhost:5434/db_patient_health_rec
 - Monitor replication lag and adjust routing accordingly
 
 **Replication Lag Management:**
+
 - Typical lag: < 1 second under normal load
 - Monitor using `pg_stat_replication` and `pg_last_xact_replay_timestamp()`
 - Consider read-after-write consistency requirements
 - Route critical reads to primary if consistency required
 
 **Maintenance Operations:**
+
 - Replicas automatically apply schema changes from primary
 - No manual intervention required for DDL statements
 - Vacuum and analyze operations replicated automatically
@@ -509,11 +637,13 @@ Replica 2 (Read): postgresql://admin:123456@localhost:5434/db_patient_health_rec
 **Manual Failover (Promote Replica to Primary):**
 
 1. **Stop Primary (if accessible):**
+
    ```bash
    docker stop db-main
    ```
 
 2. **Promote Replica:**
+
    ```bash
    docker exec -it db-slave-01 \
      psql -U admin -d db_patient_health_record \
@@ -521,6 +651,7 @@ Replica 2 (Read): postgresql://admin:123456@localhost:5434/db_patient_health_rec
    ```
 
 3. **Update Application Configuration:**
+
    - Redirect write traffic to newly promoted primary
    - Update connection strings to use new primary address
 
@@ -529,6 +660,7 @@ Replica 2 (Read): postgresql://admin:123456@localhost:5434/db_patient_health_rec
    - Point to new primary for replication
 
 **Recovery After Failover:**
+
 - Review application logs for failed transactions during outage
 - Verify data consistency across all replicas
 - Update monitoring and alerting to reflect new topology
@@ -539,58 +671,68 @@ Replica 2 (Read): postgresql://admin:123456@localhost:5434/db_patient_health_rec
 **Step-by-Step Validation:**
 
 1. **Start Services:**
+
    ```bash
    docker-compose up -d --build
    ```
 
 2. **Verify Primary Status:**
+
    ```bash
    docker exec -it db-main \
      psql -U admin -d db_patient_health_record \
      -c "SELECT * FROM pg_stat_replication;"
    ```
+
    Expected: Two rows showing connections from db-slave-01 and db-slave-02
 
 3. **Verify Replica Status:**
+
    ```bash
    docker exec -it db-slave-01 \
      psql -U admin -d db_patient_health_record \
      -c "SELECT pg_is_in_recovery();"
    ```
+
    Expected: `t` (true)
 
 4. **Test Data Replication:**
+
    ```bash
    # Insert on primary
    docker exec -it db-main \
      psql -U admin -d db_patient_health_record \
-     -c "INSERT INTO PatientRegister (first_name, last_name, 
+     -c "INSERT INTO PatientRegister (first_name, last_name,
           date_of_birth, email, phone_number, address, emergency_contact)
-         VALUES ('Test', 'User', '1990-01-01', 'test@example.com', 
+         VALUES ('Test', 'User', '1990-01-01', 'test@example.com',
           '1234567890', '123 Test St', 'Emergency Contact');"
-   
+
    # Verify on replica
    docker exec -it db-slave-01 \
      psql -U admin -d db_patient_health_record \
      -c "SELECT * FROM PatientRegister WHERE first_name = 'Test';"
    ```
+
    Expected: Data appears on replica within seconds
 
 #### 🔧 Troubleshooting
 
 **Replica Not Connecting:**
+
 - Verify network connectivity: `docker exec ubuntu-service ping db-main`
 - Check primary logs: `docker logs db-main`
 - Verify replication user credentials
 - Ensure `pg_hba.conf` allows replication connections
 
 **Replication Lag:**
+
 - Check network latency between containers
 - Monitor primary server load and I/O performance
 - Review `max_wal_senders` configuration
 - Consider increasing WAL retention with `wal_keep_size`
 
 **Replica Stuck in Recovery:**
+
 - Check replica logs: `docker logs db-slave-01`
 - Verify WAL files available on primary
 - Ensure no corruption in `$PGDATA` directory
@@ -599,16 +741,19 @@ Replica 2 (Read): postgresql://admin:123456@localhost:5434/db_patient_health_rec
 #### 🚀 Future Enhancements
 
 1. **🌍 Geographic Distribution**
+
    - Deploy replicas in different AWS regions or availability zones
    - Implement cascading replication for hierarchical topology
    - Add disaster recovery replica with delayed apply
 
 2. **🤖 Automatic Failover**
+
    - Integrate with Patroni or repmgr for automatic failover
    - Implement VIP (Virtual IP) for transparent failover
    - Configure automatic promotion of healthy replica
 
 3. **📊 Advanced Monitoring**
+
    - Deploy Prometheus exporters for PostgreSQL metrics
    - Configure Grafana dashboards for replication visualization
    - Set up alerts for replication lag thresholds
