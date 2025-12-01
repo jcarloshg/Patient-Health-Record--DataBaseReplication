@@ -90,7 +90,7 @@ services:
     container_name: db-load-balancer
     ports:
       - 5435:5432
-      - 8080:8080 # Optional: HAProxy stats page
+      - 8081:8080 # Optional: HAProxy stats page
     depends_on:
       db-slave-01:
         condition: service_healthy
