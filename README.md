@@ -1,14 +1,18 @@
-# 🏥 Patient Health Record (PHR) System - 🚧 Under Development...
+# 🏥 Patient Health Record (PHR) System
 
 ## Overview
 
 A secure, cloud-hosted Patient Health Record (PHR) system designed with **PostgreSQL Streaming Replication** to ensure high availability, disaster recovery, and regulatory compliance for healthcare environments.
 
+- 🧩 Data Replication, 🧩 Pattern Criteria, 🛑 Domain Driven Design, 🧪 Unit Testing
+- 🐳 Docker, 🐘 Postgres, 🟩 FastAPI, 🟦 Python, 🛡️ Pydantic, 🧪 Pytest, 🖥️ Bash
+
 ### 🔄 Data Replication Architecture
 
 - **Master-Slave Replication:** Implements PostgreSQL WAL-based streaming replication with one primary database (db-main) and two hot standby replicas (db-slave-01, db-slave-02)
 - **Real-Time Synchronization:** Sub-second replication lag under normal conditions with asynchronous streaming for optimal performance
-- **Read Scalability:** Write operations directed to primary (port 5432), read operations distributed across replicas (ports 5433, 5434) for horizontal scaling
+- **Read Scalability:** Write operations directed to primary (port 5432), read operations distributed across replicas via HAProxy load balancer (port 5435)
+- **Load Balancing:** HAProxy-based intelligent load balancing for read operations using least-connections algorithm with automatic health checks
 - **High Availability:** Hot standby replicas can be promoted to primary during failover scenarios, ensuring minimal downtime
 - **Data Protection:** Multiple data copies across isolated containers with automatic WAL streaming and point-in-time recovery capabilities
 
@@ -30,7 +34,7 @@ A secure, cloud-hosted Patient Health Record (PHR) system designed with **Postgr
                      │                                      │
 ┌────────────────────▼──────────────────┐    ┌─────────────▼─────────────────────┐
 │   🔌 Connection Pool (Write)          │    │   🔌 Connection Pool (Read)       │
-│   • Pool Size: 5                      │    │   • Distributed Load              │
+│   • Pool Size: 5                      │    │   • Via Load Balancer             │
 │   • Max Overflow: 10                  │    │   • Read-Only Queries             │
 │   • Timeout: 30s                      │    │   • Criteria Pattern              │
 └────────────────────┬──────────────────┘    └─────────────┬─────────────────────┘
@@ -40,24 +44,29 @@ A secure, cloud-hosted Patient Health Record (PHR) system designed with **Postgr
 │                    │       🐳 Docker Network              │                    │
 │                    │       (replication-network)          │                    │
 │                    │                                      │                    │
-│     ┌──────────────▼──────────────┐                      │                    │
-│     │   💾 db-main (Primary)      │                      │                    │
-│     │   ━━━━━━━━━━━━━━━━━━━━━━━  │                      │                    │
-│     │   🔹 Port: 5432             │                      │                    │
-│     │   🔹 Role: Master           │                      │                    │
-│     │   🔹 Operations: READ+WRITE │                      │                    │
-│     │   🔹 PostgreSQL 15.13       │                      │                    │
-│     │                             │                      │                    │
-│     │   WAL Configuration:        │                      │                    │
-│     │   • wal_level = replica     │                      │                    │
-│     │   • max_wal_senders = 5     │                      │                    │
-│     │   • archive_mode = on       │                      │                    │
-│     └───────┬──────────────┬──────┘                      │                    │
-│             │              │                             │                    │
-│             │ WAL Stream   │ WAL Stream                  │                    │
-│             │ (Async)      │ (Async)                     │                    │
-│    ┌────────▼────────┐  ┌──▼──────────────┐             │                    │
-│    │  💾 db-slave-01 │  │  💾 db-slave-02 │◄────────────┘                    │
+│     ┌──────────────▼──────────────┐         ┌────────────▼──────────────────┐ │
+│     │   💾 db-main (Primary)      │         │  ⚖️ db-load-balancer          │ │
+│     │   ━━━━━━━━━━━━━━━━━━━━━━━  │         │  (HAProxy 3.0+)              │ │
+│     │   🔹 Port: 5432             │         │  ━━━━━━━━━━━━━━━━━━━━━━━━━  │ │
+│     │   🔹 Role: Master           │         │  🔹 Port: 5435 (PostgreSQL)  │ │
+│     │   🔹 Operations: READ+WRITE │         │  🔹 Port: 8081 (Stats UI)    │ │
+│     │   🔹 PostgreSQL 15.13       │         │  🔹 Algorithm: Least Conn    │ │
+│     │                             │         │  🔹 Health Checks: 1s        │ │
+│     │   WAL Configuration:        │         │  🔹 Max Connections: 4096    │ │
+│     │   • wal_level = replica     │         │                              │ │
+│     │   • max_wal_senders = 5     │         │  Load Balancing:             │ │
+│     │   • archive_mode = on       │         │  • Rise: 2 checks            │ │
+│     └───────┬──────────────┬──────┘         │  • Fall: 3 checks            │ │
+│             │              │                │  • Timeout: 5s               │ │
+│             │ WAL Stream   │ WAL Stream     └────────────┬─────────────────┘ │
+│             │ (Async)      │ (Async)                     │                   │
+│             │              │                             │                   │
+│             │              │                             │Round-Robin        │
+│             │              │                             │Distribution       │
+│             │      ┌───────┼─────────────────────────────┼                   │
+│             │      │       │                             │                   │
+│    ┌────────▼──────▼─┐  ┌──▼──────────────┐              │                   │
+│    │  💾 db-slave-01 │  │  💾 db-slave-02 │◄─────────────┴                   │  
 │    │  (Hot Standby)  │  │  (Hot Standby)  │                                  │
 │    │  ─────────────  │  │  ─────────────  │                                  │
 │    │  🔹 Port: 5433  │  │  🔹 Port: 5434  │                                  │
@@ -73,14 +82,15 @@ A secure, cloud-hosted Patient Health Record (PHR) system designed with **Postgr
 │  • pg_is_in_recovery() (Replicas)                                             │
 │  • Replication Lag Monitoring                                                 │
 │  • Health Checks: pg_isready (10s interval)                                   │
+│  • HAProxy Stats: http://localhost:8081/haproxy_stats (user:password)        │
 └────────────────────────────────────────────────────────────────────────────────┘
 
-┌────────────────────────────────────────────────────────────────────────────────┐
-│                          💾 Persistent Storage Layer                           │
-│                                                                                 │
-│    🗃️ db-main-volume      🗃️ db-slave-01-volume      🗃️ db-slave-02-volume   │
+┌───────────────────────────────────────────────────────────────────────────────┐
+│                          💾 Persistent Storage Layer                          │
+│                                                                               │
+│    🗃️ db-main-volume      🗃️ db-slave-01-volume      🗃️ db-slave-02-volume    │
 │    (Docker Volume)        (Docker Volume)            (Docker Volume)          │
-└────────────────────────────────────────────────────────────────────────────────┘
+└───────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ### 🎯 Key Features
@@ -88,6 +98,8 @@ A secure, cloud-hosted Patient Health Record (PHR) system designed with **Postgr
 - **Clean Architecture:** Domain-Driven Design with clear separation between presentation, application, domain, and infrastructure layers
 - **Type-Safe Validation:** Multi-layer validation using Pydantic (application) and PostgreSQL constraints (database)
 - **Flexible Querying:** Advanced Criteria Pattern for dynamic, type-safe queries with filters, ordering, and pagination
+- **Load Balancing:** HAProxy-based intelligent traffic distribution with least-connections algorithm and automatic failover
+- **High Availability:** Automatic health checks, failover support, and redundant replica nodes for continuous service
 - **Security-First:** MD5 authentication, network isolation, SQL injection prevention through SQLAlchemy ORM
 - **Production-Ready:** Connection pooling, health checks, monitoring tools, and comprehensive error handling
 
@@ -173,6 +185,7 @@ The Patient Health Record (PHR) system implements a **Clean Architecture** patte
 
 - **Primary Database:** PostgreSQL 15.13
 - **Replication Type:** Streaming Replication (WAL-based)
+- **Load Balancer:** HAProxy (latest)
 - **Database Driver:** psycopg2-binary 2.9.9
 - **Connection Pooling:** SQLAlchemy QueuePool
   - Pool size: 5 connections (configurable)
@@ -184,29 +197,39 @@ The Patient Health Record (PHR) system implements a **Clean Architecture** patte
 
 - **Container Runtime:** Docker
 - **Orchestration:** Docker Compose
-- **Base Image:** postgres:15.13
+- **Base Image (PostgreSQL):** postgres:15.13
+- **Base Image (Load Balancer):** haproxy:latest
 
 ### 🗄️ Database Architecture
 
 #### 🔗 Database Topology
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                     Primary Region                           │
-│                                                               │
-│  ┌──────────────┐    Streaming      ┌──────────────┐        │
-│  │   db-main    │   Replication     │   db-slave   │        │
-│  │  (Primary)   │ ──────────────>   │  (Replica)   │        │
-│  │  Port: 5432  │   Synchronous     │  Port: 5433  │        │
-│  └──────────────┘                   └──────────────┘        │
-│         │                                    │               │
-│         │ Write Operations                   │ Read Queries  │
-│         └────────────────┬───────────────────┘               │
-│                          │                                   │
-└──────────────────────────┼───────────────────────────────────┘
-                           │
-                      Application
-                         Layer
+┌──────────────────────────────────────────────────────────────────────┐
+│                        Primary Region                                 │
+│                                                                       │
+│                         Application Layer                             │
+│                                                                       │
+│         Write Operations                    Read Operations          │
+│              │                                    │                   │
+│              │                                    │                   │
+│    ┌─────────▼────────────┐          ┌───────────▼────────────┐     │
+│    │   db-main (Primary)  │          │  db-load-balancer      │     │
+│    │   Port: 5432         │          │  (HAProxy)             │     │
+│    │   READ + WRITE       │          │  Port: 5435            │     │
+│    └─────────┬────────────┘          │  Algorithm: leastconn  │     │
+│              │                        └───────────┬────────────┘     │
+│              │ WAL Streaming                      │                  │
+│              │ (Async)                            │                  │
+│              │    ┌───────────────────────────────│ Load Balanced    │
+│    ┌─────────▼────▼───┐  ┌─────────────────┐      │ Distribution     │
+│    │  db-slave-01     │  │  db-slave-02    │◄─────┘                  │
+│    │  (Hot Standby)   │  │  (Hot Standby)  │                        │
+│    │  Port: 5433      │  │  Port: 5434     │                        │
+│    │  READ ONLY       │  │  READ ONLY      │                        │
+│    └──────────────────┘  └─────────────────┘                        │
+│                                                                       │
+└───────────────────────────────────────────────────────────────────────┘
 ```
 
 #### ⚙️ Database Configuration
@@ -222,15 +245,26 @@ The Patient Health Record (PHR) system implements a **Clean Architecture** patte
 - **Archive Mode:** Enabled (archive_command: '/bin/true')
 - **Hot Standby:** Enabled
 
-**Replica Database (db-slave):**
+**Replica Databases (db-slave-01, db-slave-02):**
 
-- **Host:** localhost:5433
+- **Host:** localhost:5433 (db-slave-01), localhost:5434 (db-slave-02)
 - **Database Name:** `db_patient_health_record`
-- **Role:** Hot Standby - Read-only replica
+- **Role:** Hot Standby - Read-only replicas
 - **Replication Method:** Streaming (pg_basebackup)
-- **Replication User:** `replicator`
+- **Replication User:** `repl_user`
 - **Connection Mode:** Asynchronous streaming
 - **Hot Standby:** Enabled (allows read queries)
+
+**Load Balancer (db-load-balancer):**
+
+- **Host:** localhost:5435
+- **Technology:** HAProxy (latest version)
+- **Role:** Intelligent read traffic distribution
+- **Algorithm:** Least Connections (leastconn)
+- **Backend Servers:** db-slave-01, db-slave-02
+- **Health Checks:** TCP checks every 1 second
+- **Max Connections:** 4096 concurrent connections
+- **Stats Interface:** http://localhost:8081/haproxy_stats
 
 #### 🔄 Replication Features
 
@@ -461,10 +495,24 @@ ENTRYPOINT ["/bin/bash", "-c",
 **Service Dependencies:**
 
 ```yaml
+# Replicas wait for primary to be healthy
 db-slave-01:
   depends_on:
     db-main:
-      condition: service_healthy # Wait for primary to be healthy
+      condition: service_healthy
+
+db-slave-02:
+  depends_on:
+    db-main:
+      condition: service_healthy
+
+# Load balancer waits for all replicas to be healthy
+db-load-balancer:
+  depends_on:
+    db-slave-01:
+      condition: service_healthy
+    db-slave-02:
+      condition: service_healthy
 ```
 
 **Health Check Configuration:**
@@ -480,6 +528,7 @@ healthcheck:
 - Ensures database is ready before dependents start
 - Prevents replication setup failures
 - Enables orchestration-level health monitoring
+- Load balancer starts only when replicas are healthy
 
 **Network Configuration:**
 
@@ -490,7 +539,7 @@ networks:
 ```
 
 - Isolated network for database communication
-- DNS resolution between services (db-main, db-slave-01, db-slave-02)
+- DNS resolution between services (db-main, db-slave-01, db-slave-02, db-load-balancer)
 - Security through network segmentation
 
 **Volume Persistence:**
@@ -563,10 +612,13 @@ FROM pg_stat_wal_receiver;
 **Read Operation Flow:**
 
 ```
-1. Application → db-slave-01 (Port 5433) OR db-slave-02 (Port 5434)
-2. Replica serves read-only queries
-3. Load distributed across replicas
-4. Primary database freed for write operations
+1. Application → db-load-balancer (Port 5435)
+2. HAProxy selects optimal replica (db-slave-01 or db-slave-02)
+3. Connection forwarded to selected replica
+4. Replica serves read-only query
+5. Results returned via load balancer to application
+6. Load distributed intelligently across replicas
+7. Primary database freed for write operations
 ```
 
 #### 🛡️ Replication Features & Benefits
@@ -594,6 +646,306 @@ FROM pg_stat_wal_receiver;
    - Read load offloaded from primary
    - Primary dedicated to write operations
    - Improved application response times
+
+### ⚖️ Load Balancer Implementation (HAProxy)
+
+#### 🎯 Load Balancer Overview
+
+The PHR system implements **HAProxy** as a high-performance TCP load balancer to intelligently distribute read operations across multiple PostgreSQL replica databases. This implementation ensures optimal resource utilization, automatic failover, and transparent connection management for the application layer.
+
+#### 🏗️ Load Balancer Architecture
+
+```
+┌────────────────────────────────────────────────────────────────────┐
+│                     Application Layer                              │
+│                   (Read Operations Only)                           │
+└──────────────────────────┬─────────────────────────────────────────┘
+                           │
+                           │ TCP Connection
+                           │ Port 5435
+                           │
+┌──────────────────────────▼─────────────────────────────────────────┐
+│                  ⚖️ HAProxy Load Balancer                          │
+│                  ━━━━━━━━━━━━━━━━━━━━━━━━                          │
+│  Container: db-load-balancer                                       │
+│  Ports: 5435 (PostgreSQL), 8081 (Stats)                           │
+│                                                                     │
+│  📊 Configuration:                                                  │
+│  • Algorithm: Least Connections (leastconn)                        │
+│  • Max Connections: 4096                                           │
+│  • Health Check Interval: 1 second                                 │
+│  • Rise Threshold: 2 successful checks                             │
+│  • Fall Threshold: 3 failed checks                                 │
+│  • Connection Timeout: 5s                                          │
+│  • Client Timeout: 50s                                             │
+│  • Server Timeout: 50s                                             │
+└──────────────┬─────────────────────────┬──────────────────────────┘
+               │                         │
+               │ Health Checks           │ Health Checks
+               │ TCP on Port 5432        │ TCP on Port 5432
+               │                         │
+      ┌────────▼──────────┐    ┌────────▼──────────┐
+      │  db-slave-01      │    │  db-slave-02      │
+      │  (Read Replica 1) │    │  (Read Replica 2) │
+      │  Port: 5432       │    │  Port: 5432       │
+      │  (Internal)       │    │  (Internal)       │
+      └───────────────────┘    └───────────────────┘
+```
+
+#### ⚙️ HAProxy Configuration
+
+**Global Settings (`haproxy.cfg`):**
+
+```ini
+global
+    maxconn 4096                    # Maximum concurrent connections
+    log /dev/log local0 notice      # Logging configuration
+    daemon                          # Run as background service
+```
+
+**Default Timeouts:**
+
+```ini
+defaults
+    mode tcp                        # TCP proxy mode (Layer 4)
+    timeout connect 5s              # Backend connection timeout
+    timeout client 50s              # Client inactivity timeout
+    timeout server 50s              # Server inactivity timeout
+```
+
+**Frontend Configuration:**
+
+```ini
+frontend postgres_reads
+    bind *:5432                     # Listen on port 5432 (internal)
+    default_backend read_replicas   # Route to replica backend
+```
+
+- Accepts incoming PostgreSQL connections
+- Single entry point for read operations
+- Transparent to application layer
+
+**Backend Configuration:**
+
+```ini
+backend read_replicas
+    balance leastconn               # Least connections algorithm
+    option tcp-check                # Enable TCP health checks
+    tcp-check send-binary 0d0a      # Send byte to trigger response
+
+    # Replica server definitions
+    server db-slave-01 db-slave-01:5432 check port 5432 inter 1s rise 2 fall 3
+    server db-slave-02 db-slave-02:5432 check port 5432 inter 1s rise 2 fall 3
+```
+
+**Load Balancing Algorithm:**
+
+- **`leastconn` (Least Connections):**
+  - Routes new connections to the replica with the fewest active connections
+  - Ideal for long-lived database connections
+  - Ensures even distribution of query load
+  - Better performance than round-robin for variable query times
+
+**Health Check Configuration:**
+
+- **`check`:** Enables active health checking
+- **`inter 1s`:** Health check every 1 second
+- **`rise 2`:** Mark server UP after 2 consecutive successful checks
+- **`fall 3`:** Mark server DOWN after 3 consecutive failed checks
+- **TCP Check:** Validates server accepts connections
+
+**Monitoring Interface:**
+
+```ini
+listen stats
+    bind *:8080                     # Stats interface port (exposed as 8081)
+    stats enable                    # Enable statistics page
+    stats uri /haproxy_stats        # Access URL path
+    stats realm Haproxy\ Statistics # Authentication realm
+    stats auth user:password        # Basic authentication credentials
+```
+
+- Real-time monitoring dashboard
+- Server status and connection statistics
+- Traffic distribution metrics
+- Access: http://localhost:8081/haproxy_stats
+
+#### 🐳 Docker Configuration
+
+**Dockerfile:**
+
+```dockerfile
+FROM haproxy:latest
+
+# Copy HAProxy configuration
+COPY app/haproxy.cfg /usr/local/etc/haproxy/haproxy.cfg
+
+# Expose PostgreSQL proxy port
+EXPOSE 5432
+
+# Expose statistics page port
+EXPOSE 8080
+```
+
+**Docker Compose Service:**
+
+```yaml
+db-load-balancer:
+  build: ./data-base-load-balancer
+  container_name: db-load-balancer
+  ports:
+    - 5435:5432 # Map internal 5432 to external 5435
+    - 8081:8080 # Map stats port
+  depends_on:
+    db-slave-01:
+      condition: service_healthy
+    db-slave-02:
+      condition: service_healthy
+  networks:
+    - replication-network
+  restart: unless-stopped
+```
+
+**Key Configuration Points:**
+
+- **Port Mapping:** External port 5435 avoids conflict with db-main (5432)
+- **Health Dependencies:** Starts only after replicas are healthy
+- **Network:** Shares replication-network with database services
+- **Restart Policy:** Automatic recovery from failures
+
+#### 📊 Load Balancer Features
+
+1. **🎯 Intelligent Traffic Distribution**
+
+   - Least-connections algorithm ensures optimal load distribution
+   - Prevents server overload by balancing active connections
+   - Dynamic routing based on real-time server metrics
+
+2. **🏥 Automatic Health Monitoring**
+
+   - Continuous health checks every 1 second
+   - Automatic failover on replica failure
+   - Failed replicas removed from rotation
+   - Automatic recovery when replicas return to healthy state
+
+3. **📈 High Availability**
+
+   - Multiple backend servers for redundancy
+   - Zero downtime during replica maintenance
+   - Graceful degradation (single replica can handle all reads)
+   - No single point of failure for read operations
+
+4. **🔍 Monitoring & Observability**
+
+   - Real-time statistics dashboard
+   - Connection metrics per replica
+   - Health status visibility
+   - Traffic distribution analytics
+   - Response time tracking
+
+5. **⚡ Performance Optimization**
+
+   - Layer 4 (TCP) load balancing for minimal overhead
+   - No SSL termination (passed through to PostgreSQL)
+   - High concurrency support (4096 connections)
+   - Efficient connection pooling
+   - Low latency routing decisions
+
+#### 🎮 Using the Load Balancer
+
+**Application Configuration:**
+
+```python
+# Read operations via load balancer
+READ_DATABASE_URL = "postgresql://admin:123456@localhost:5435/db_patient_health_record"
+
+# Write operations direct to primary
+WRITE_DATABASE_URL = "postgresql://admin:123456@localhost:5432/db_patient_health_record"
+```
+
+**Connection Examples:**
+
+```bash
+# Connect via load balancer for reads
+psql -h localhost -p 5435 -U admin -d db_patient_health_record
+
+# Check which replica you're connected to
+SELECT inet_server_addr(), inet_server_port();
+```
+
+**Monitoring Load Balancer:**
+
+```bash
+# Access HAProxy statistics dashboard
+open http://localhost:8081/haproxy_stats
+# Credentials: user / password (change in production!)
+
+# Check load balancer container logs
+docker logs db-load-balancer
+
+# Monitor connection distribution
+watch -n 1 'curl -s http://user:password@localhost:8081/haproxy_stats;csv'
+```
+
+#### 🔄 Load Balancing Workflow
+
+**Read Query Flow:**
+
+```
+1. Application connects to localhost:5435
+2. HAProxy receives connection on internal port 5432
+3. HAProxy selects replica using leastconn algorithm
+4. HAProxy performs TCP health check on selected replica
+5. If healthy: Forward connection to replica
+6. If unhealthy: Select next available replica
+7. Replica executes query and returns results
+8. HAProxy passes results back to application
+9. Connection maintained or closed based on application
+```
+
+**Failover Scenario:**
+
+```
+1. db-slave-01 becomes unavailable
+2. HAProxy detects 3 consecutive health check failures (3 seconds)
+3. HAProxy marks db-slave-01 as DOWN
+4. All new connections routed to db-slave-02
+5. Existing connections to db-slave-01 terminated
+6. Application retries connect to load balancer
+7. db-slave-01 recovers and passes 2 health checks (2 seconds)
+8. HAProxy marks db-slave-01 as UP
+9. Load balancing resumes across both replicas
+```
+
+#### 🛡️ Production Considerations
+
+**Security:**
+
+- Change default stats credentials (`user:password`)
+- Restrict stats interface to internal networks only
+- Consider implementing ACLs for connection filtering
+- Use strong authentication for PostgreSQL connections
+
+**Scalability:**
+
+- Add more replicas by updating `haproxy.cfg` backend section
+- Increase `maxconn` for higher concurrent load
+- Monitor connection saturation metrics
+- Scale horizontally by adding replica nodes
+
+**Monitoring:**
+
+- Set up alerts for replica failures
+- Track connection distribution imbalances
+- Monitor response times and latency
+- Log analysis for connection patterns
+
+**High Availability:**
+
+- Consider deploying multiple HAProxy instances
+- Implement keepalived for HAProxy failover
+- Use DNS or virtual IP for HAProxy redundancy
+- Regular backup of HAProxy configuration
 
 5. **🔒 Data Protection**
    - Multiple copies of data across containers
@@ -686,7 +1038,22 @@ Replica 2 (Read): postgresql://admin:123456@localhost:5434/db_patient_health_rec
 
    Expected: Two rows showing connections from db-slave-01 and db-slave-02
 
-3. **Verify Replica Status:**
+3. **Verify Load Balancer Status:**
+
+   ```bash
+   # Check load balancer is running
+   docker ps | grep db-load-balancer
+
+   # View HAProxy stats
+   curl -u user:password http://localhost:8081/haproxy_stats
+
+   # Test connection through load balancer
+   psql -h localhost -p 5435 -U admin -d db_patient_health_record -c "SELECT pg_is_in_recovery();"
+   ```
+
+   Expected: Load balancer running, stats page accessible, connection successful
+
+4. **Verify Replica Status:**
 
    ```bash
    docker exec -it db-slave-01 \
@@ -696,7 +1063,7 @@ Replica 2 (Read): postgresql://admin:123456@localhost:5434/db_patient_health_rec
 
    Expected: `t` (true)
 
-4. **Test Data Replication:**
+5. **Test Data Replication:**
 
    ```bash
    # Insert on primary
@@ -716,6 +1083,14 @@ Replica 2 (Read): postgresql://admin:123456@localhost:5434/db_patient_health_rec
    Expected: Data appears on replica within seconds
 
 #### 🔧 Troubleshooting
+
+**Load Balancer Issues:**
+
+- Verify load balancer is running: `docker ps | grep db-load-balancer`
+- Check HAProxy logs: `docker logs db-load-balancer`
+- Verify replicas are marked as UP in stats page: http://localhost:8081/haproxy_stats
+- Test direct replica connection: `psql -h localhost -p 5433 -U admin`
+- Ensure replicas passed health checks before load balancer started
 
 **Replica Not Connecting:**
 
