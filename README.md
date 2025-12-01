@@ -4,8 +4,8 @@
 
 A secure, cloud-hosted Patient Health Record (PHR) system designed with **PostgreSQL Streaming Replication** to ensure high availability, disaster recovery, and regulatory compliance for healthcare environments.
 
-- 🧩 Data Replication, 🧩 Pattern Criteria, 🛑 Domain Driven Design, 🧪 Unit Testing
-- 🐳 Docker, 🐘 Postgres, 🟩 FastAPI, 🟦 Python, 🛡️ Pydantic, 🧪 Pytest, 🖥️ Bash
+- 🧩 Data Replication, 🧩 Pattern Criteria, 🛑 Domain Driven Design, 🧪 Unit Testing, ⚖️ Load Balancing, 🏗️ Clean Architecture, 🔌 Connection Pooling, 🔄 Streaming Replication
+- 🐳 Docker, 🐘 PostgreSQL, 🟩 FastAPI, 🟦 Python, 🛡️ Pydantic, 🧪 Pytest, 🖥️ Bash, 🔗 SQLAlchemy, 🟧 Uvicorn, 🌐 HTTPX, 🟪 HAProxy, 📦 python-dotenv
 
 ### 🔄 Data Replication Architecture
 
@@ -66,7 +66,7 @@ A secure, cloud-hosted Patient Health Record (PHR) system designed with **Postgr
 │             │      ┌───────┼─────────────────────────────┼                   │
 │             │      │       │                             │                   │
 │    ┌────────▼──────▼─┐  ┌──▼──────────────┐              │                   │
-│    │  💾 db-slave-01 │  │  💾 db-slave-02 │◄─────────────┴                   │  
+│    │  💾 db-slave-01 │  │  💾 db-slave-02 │◄─────────────┴                   │
 │    │  (Hot Standby)  │  │  (Hot Standby)  │                                  │
 │    │  ─────────────  │  │  ─────────────  │                                  │
 │    │  🔹 Port: 5433  │  │  🔹 Port: 5434  │                                  │
